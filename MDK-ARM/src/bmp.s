@@ -5,5 +5,5 @@
 ;  ******************************************************************************
 
     AREA    IMG_BMP, DATA, READONLY, PREINIT_ARRAY
-    INCBIN  img2.bmp
+    INCBIN  img.bmp
     END
