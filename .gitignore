@@ -61,3 +61,4 @@ dkms.conf
 stabilcd.uvoptx
 stabilcd.uvguix.*
 **/DebugConfig
+*.scvd
