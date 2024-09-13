@@ -53,7 +53,20 @@ float Buffer[6];
 float Gyro[3];
 float X_BiasError, Y_BiasError, Z_BiasError = 0.0;
 uint8_t Xval, Yval = 0x00;
+
 static __IO uint32_t TimingDelay;
+RCC_ClocksTypeDef RCC_Clocks;
+
+// transformed active zone
+uint8_t frame_new[ACTIVE_WIDTH*ACTIVE_HEIGHT]; 
+
+// actual active zone
+uint8_t frame_cur[ACTIVE_WIDTH*ACTIVE_HEIGHT]; 
+
+// original image
+uint8_t frame_bmp[BMP_WIDTH*BMP_HEIGHT]; 
+
+
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 static void Demo_MEMS(void);
@@ -61,10 +74,6 @@ static void Demo_GyroConfig(void);
 static void Demo_GyroReadAngRate (float* pfData);
 static void Gyro_SimpleCalibration(float* GyroData);
 
-uint8_t frame_cur[ACTIVE_WIDTH*ACTIVE_HEIGHT]; 
-
-// original image
-uint8_t frame_bmp[BMP_WIDTH*BMP_HEIGHT]; 
 
 
 /**
@@ -72,23 +81,45 @@ uint8_t frame_bmp[BMP_WIDTH*BMP_HEIGHT];
 * @param  None
 * @retval None
 */
-static void stabil_calc(void)
-{}
-
-/**
-* @brief  
-* @param  None
-* @retval None
-*/
-static void LCD_InitActiveZone(void)
+static float StabilPhiCalc(void)
 {
-	
+    float phi = 0.0;
     
-	int32_t i,j = 0;
-  
-    
-	// fill the pict
-	for (i=0; i<ACTIVE_HEIGHT; i++)
+    return phi;
+}
+
+/**
+* @brief  
+* @param  None
+* @retval None
+*/
+static void InitActiveZone(uint8_t *dst_image, uint8_t *bmp_image)
+{
+	uint32_t i,j;
+    for (i=0; i<ACTIVE_HEIGHT; i++)
+    {
+        for (j=0; j<ACTIVE_WIDTH; j++) 
+        {
+            if ((j >= ACTIVE_WIDTH/2 - BMP_WIDTH/2)&&(j < ACTIVE_WIDTH/2 + BMP_WIDTH/2)&&
+                (i >= ACTIVE_HEIGHT/2 - BMP_HEIGHT/2)&&(i < ACTIVE_HEIGHT/2 + BMP_HEIGHT/2))
+                *(dst_image + i*ACTIVE_WIDTH + j) = \
+                *(bmp_image + (i - ACTIVE_HEIGHT/2 + BMP_HEIGHT/2)*BMP_WIDTH + j - ACTIVE_WIDTH/2 + BMP_WIDTH/2);
+            else *(dst_image + i*ACTIVE_WIDTH + j) = 128;
+        }
+    }
+}
+
+
+/**
+* @brief  
+* @param  None
+* @retval None
+*/
+static void RotateActiveZone(uint8_t *dst_image, uint8_t *src_image, float phi)
+{
+    /*
+	uint32_t i,j;
+    for (i=0; i<ACTIVE_HEIGHT; i++)
     {
         for (j=0; j<ACTIVE_WIDTH; j++) 
         {
@@ -99,10 +130,7 @@ static void LCD_InitActiveZone(void)
             else frame_cur[i*ACTIVE_WIDTH + j] = 128;
         }
     }
-    
-	    
-	
-
+    */
 }
 
 
@@ -111,7 +139,7 @@ static void LCD_InitActiveZone(void)
 * @param  source BMP-file address, dst image address, image sizes 
 * @retval bytes read
 */
-uint32_t LCD_ReadBMP(uint32_t BmpAddress, uint32_t *width, uint32_t *height)
+static uint32_t ReadBMP(uint32_t BmpAddress, uint8_t *bmp_image, uint32_t *width, uint32_t *height)
 {
   uint32_t index = 0, size = 0, bit_pixel = 0;
   uint32_t currentline = 0, linenumber = 0;
@@ -149,7 +177,7 @@ uint32_t LCD_ReadBMP(uint32_t BmpAddress, uint32_t *width, uint32_t *height)
   
   for(index = 0; index < size; index++)
   {
-    frame_bmp[Address] = *(__IO uint8_t *)BmpAddress;
+    *(bmp_image + Address) = *(__IO uint8_t *)BmpAddress;
     
     /*jump on next byte */   
     BmpAddress++;
@@ -177,25 +205,21 @@ uint32_t LCD_ReadBMP(uint32_t BmpAddress, uint32_t *width, uint32_t *height)
   * @param  
   * @retval None
   */
-void LCD_DrawActiveZone(uint16_t horz_pos, uint16_t vert_pos, uint8_t back_color)
+static void DrawActiveZone(uint8_t *img, uint16_t horz_pos, uint16_t vert_pos, uint8_t back_color)
 {
     uint32_t Address;
  	uint32_t i, j, src_pixel;
 	uint32_t RGB565_pixel;
 	uint32_t R_comp, B_comp, G_comp;
- 
-
 
     // FOREGROUND
-    /* reconfigure layer size in accordance with the picture */
     LTDC_LayerSize(LTDC_Layer2, LCD_SIZE_PIXEL_WIDTH, LCD_SIZE_PIXEL_HEIGHT);
     LTDC_ReloadConfig(LTDC_VBReload); 
  
-		// assume 24 BPP
-		LTDC_LayerPixelFormat(LTDC_Layer1, LTDC_Pixelformat_RGB565);
-		LTDC_ReloadConfig(LTDC_VBReload);
- 
- 
+	// assume 24 BPP
+	LTDC_LayerPixelFormat(LTDC_Layer1, LTDC_Pixelformat_RGB565);
+	LTDC_ReloadConfig(LTDC_VBReload);
+  
     for (i=0; i<LCD_SIZE_PIXEL_HEIGHT; i++)
 	{
 		for (j=0; j<LCD_SIZE_PIXEL_WIDTH; j++)
@@ -205,13 +229,12 @@ void LCD_DrawActiveZone(uint16_t horz_pos, uint16_t vert_pos, uint8_t back_color
             if ((j >= horz_pos - ACTIVE_WIDTH/2)&&(j < horz_pos + ACTIVE_WIDTH/2)&&
                 (i >= vert_pos - ACTIVE_HEIGHT/2)&&(i < vert_pos + ACTIVE_HEIGHT/2))
             {
-                src_pixel = frame_cur[(i - vert_pos + ACTIVE_HEIGHT/2)*ACTIVE_WIDTH + j - horz_pos + ACTIVE_WIDTH/2] >> 3;
+                src_pixel = *(img + (i - vert_pos + ACTIVE_HEIGHT/2)*ACTIVE_WIDTH + j - horz_pos + ACTIVE_WIDTH/2) >> 3;
             }
             else
             {    
                 src_pixel = back_color >> 3;
 			}
-            
          
 			R_comp = src_pixel & 0x1F;
 			G_comp = (src_pixel << 1) & 0x3F;
@@ -222,21 +245,11 @@ void LCD_DrawActiveZone(uint16_t horz_pos, uint16_t vert_pos, uint8_t back_color
 			*(__IO uint8_t*) (Address+1) = (uint8_t)((RGB565_pixel >> 8) & 0xFF);
 		}
 	}
-
-/*
-	
-  Red_Value = (0xF800 & CurrentTextColor) >> 11;
-  Blue_Value = 0x001F & CurrentTextColor;
-  Green_Value = (0x07E0 & CurrentTextColor) >> 5;
-*/	
-	
-	
 }
 
 
-RCC_ClocksTypeDef RCC_Clocks;
 /**
-  * @brief   Main program
+  * @brief  Main program
   * @param  None
   * @retval None
   */
@@ -303,25 +316,24 @@ int main(void)
     
     /* Disable INT1 interrupt */  
     L3GD20_INT1InterruptCmd(DISABLE);  
-  
-	////
-	LCD_DisplayStringLine(LCD_LINE_1, (uint8_t*)"INT1 dis ***");
 	
 	LCD_Clear(LCD_COLOR_BLACK);
 	
     // BMP read
     uint32_t bmp_width, bmp_height;
-    uint32_t bytes = LCD_ReadBMP(IMG_BMP_ADDR, &bmp_width, &bmp_height);
+    uint32_t bytes = ReadBMP(IMG_BMP_ADDR, (uint8_t*)frame_bmp, &bmp_width, &bmp_height);
 
     uint8_t str[20];
-    sprintf((char*)str, "bytes=%d", bytes);
-  	LCD_DisplayStringLine(LCD_LINE_1, (uint8_t*)str);
+    sprintf((char*)str, "BMP read Ok");
+  	LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)str);
     sprintf((char*)str, "width=%d", bmp_width);
-  	LCD_DisplayStringLine(LCD_LINE_2, (uint8_t*)str);
+  	LCD_DisplayStringLine(LCD_LINE_1, (uint8_t*)str);
     sprintf((char*)str, "height=%d", bmp_height);
-  	LCD_DisplayStringLine(LCD_LINE_3, (uint8_t*)str);
+  	LCD_DisplayStringLine(LCD_LINE_2, (uint8_t*)str);
+        
+    Delay(1000000);
 
-    LCD_InitActiveZone();
+    InitActiveZone((uint8_t*)frame_cur, (uint8_t*)frame_bmp);
 
     while (1)
     {
@@ -329,9 +341,15 @@ int main(void)
         if (lcd_period_flag)
         {
             //Demo_MEMS();	
-            stabil_calc();
             
-            LCD_DrawActiveZone(LCD_SIZE_PIXEL_WIDTH/2, LCD_SIZE_PIXEL_HEIGHT/2, 255);
+            // calc phi
+            float phi = StabilPhiCalc();
+            
+            // rotate
+            RotateActiveZone((uint8_t*)frame_new, (uint8_t*)frame_cur, phi);
+            
+            // redraw
+            DrawActiveZone((uint8_t*)frame_cur, LCD_SIZE_PIXEL_WIDTH/2, LCD_SIZE_PIXEL_HEIGHT/2, 255);
             
 			frame_cnt++;
 			if (frame_cnt == LCD_SIZE_PIXEL_WIDTH) frame_cnt = 0;
@@ -543,7 +561,7 @@ uint32_t L3GD20_TIMEOUT_UserCallback(void)
 
 /**
   * @brief  Inserts a delay time.
-  * @param  nTime: specifies the delay time length, in 10 ms.
+  * @param  nTime: specifies the delay time length
   * @retval None
   */
 void Delay(__IO uint32_t nTime)

@@ -55,8 +55,8 @@
 /* Exported functions ------------------------------------------------------- */
 void Delay(__IO uint32_t nTime);
 void TimingDelay_Decrement(void);
-void LCD_DrawActiveZone(uint16_t horz_pos, uint16_t vert_pos, uint8_t back_color);
-uint32_t LCD_ReadBMP(uint32_t BmpAddress, uint32_t *width, uint32_t *height);
+//void LCD_DrawActiveZone(uint16_t horz_pos, uint16_t vert_pos, uint8_t back_color);
+//uint32_t LCD_ReadBMP(uint32_t BmpAddress, uint8_t *dst_image, uint32_t *width, uint32_t *height);
 
 #endif /* __MAIN_H */
 

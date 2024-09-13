@@ -147,13 +147,13 @@ void PendSV_Handler(void)
   */
 void SysTick_Handler(void)
 {
-//    TimingDelay_Decrement();
-		systick_cnt++;
-		if (systick_cnt == LCD_ILI9341_PERIOD_USEC)	
-		{
-			lcd_period_flag = 1;
-			systick_cnt = 0;
-		}
+    TimingDelay_Decrement();
+    systick_cnt++;
+    if (systick_cnt == LCD_ILI9341_PERIOD_USEC)	
+    {
+        lcd_period_flag = 1;
+		systick_cnt = 0;
+	}
 			
 }
 
