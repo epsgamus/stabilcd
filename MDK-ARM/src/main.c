@@ -185,33 +185,34 @@ void LCD_DrawActiveZone(uint16_t horz_pos, uint16_t vert_pos, uint8_t back_color
 	uint32_t R_comp, B_comp, G_comp;
  
 
-    // (CurrentLayer == LCD_BACKGROUND_LAYER)
+
+    // FOREGROUND
     /* reconfigure layer size in accordance with the picture */
-    LTDC_LayerSize(LTDC_Layer1, LCD_SIZE_PIXEL_WIDTH, LCD_SIZE_PIXEL_HEIGHT);
-    LTDC_ReloadConfig(LTDC_VBReload);
-    // assume 24 BPP
-    LTDC_LayerPixelFormat(LTDC_Layer1, LTDC_Pixelformat_RGB565);
-	LTDC_ReloadConfig(LTDC_VBReload);
+    LTDC_LayerSize(LTDC_Layer2, LCD_SIZE_PIXEL_WIDTH, LCD_SIZE_PIXEL_HEIGHT);
+    LTDC_ReloadConfig(LTDC_VBReload); 
+ 
+		// assume 24 BPP
+		LTDC_LayerPixelFormat(LTDC_Layer1, LTDC_Pixelformat_RGB565);
+		LTDC_ReloadConfig(LTDC_VBReload);
+ 
  
     for (i=0; i<LCD_SIZE_PIXEL_HEIGHT; i++)
 	{
 		for (j=0; j<LCD_SIZE_PIXEL_WIDTH; j++)
 		{
-			Address = LCD_FRAME_BUFFER + i*LCD_SIZE_PIXEL_WIDTH*2 + j*2;
+			Address = LCD_FRAME_BUFFER + BUFFER_OFFSET + i*LCD_SIZE_PIXEL_WIDTH*2 + j*2;
             
             if ((j >= horz_pos - ACTIVE_WIDTH/2)&&(j < horz_pos + ACTIVE_WIDTH/2)&&
                 (i >= vert_pos - ACTIVE_HEIGHT/2)&&(i < vert_pos + ACTIVE_HEIGHT/2))
             {
-                // src_pixel = frame_cur[(i - vert_pos + ACTIVE_HEIGHT/2)*ACTIVE_WIDTH + j - horz_pos + ACTIVE_WIDTH/2] >> 3;
+                src_pixel = frame_cur[(i - vert_pos + ACTIVE_HEIGHT/2)*ACTIVE_WIDTH + j - horz_pos + ACTIVE_WIDTH/2] >> 3;
             }
             else
             {    
-                // src_pixel = back_color >> 3;
+                src_pixel = back_color >> 3;
 			}
             
-            ////
-            src_pixel = back_color >> 3;
-            
+         
 			R_comp = src_pixel & 0x1F;
 			G_comp = (src_pixel << 1) & 0x3F;
 			B_comp = src_pixel & 0x1F;
@@ -244,7 +245,7 @@ int main(void)
     //int32_t i,j = 0;
   
 	/// fill the pict
-	//for (i=0; i<LCD_SIZE_PIXEL_WIDTH*LCD_SIZE_PIXEL_HEIGHT; i++) frame_cur[i] = i % 240;
+	//for (i=0; i<ACTIVE_WIDTH*ACTIVE_HEIGHT; i++) frame_cur[i] = i % 240;
 	
     /* Initialize LEDs and user button on STM32F429I-DISCO board ****************/
     STM_EVAL_LEDInit(LED3);
@@ -320,7 +321,7 @@ int main(void)
     sprintf((char*)str, "height=%d", bmp_height);
   	LCD_DisplayStringLine(LCD_LINE_3, (uint8_t*)str);
 
-    //LCD_InitActiveZone();
+    LCD_InitActiveZone();
 
     while (1)
     {
@@ -330,7 +331,7 @@ int main(void)
             //Demo_MEMS();	
             stabil_calc();
             
-            LCD_DrawActiveZone(LCD_SIZE_PIXEL_WIDTH/2, LCD_SIZE_PIXEL_HEIGHT/2, 128);
+            LCD_DrawActiveZone(LCD_SIZE_PIXEL_WIDTH/2, LCD_SIZE_PIXEL_HEIGHT/2, 255);
             
 			frame_cnt++;
 			if (frame_cnt == LCD_SIZE_PIXEL_WIDTH) frame_cnt = 0;
