@@ -56,3 +56,7 @@ dkms.conf
 
 # Miscellaneous
 *.DS_Store
+
+# MDK-ARM
+stabilcd.uvoptx
+stabilcd.uvguix.*
