@@ -61,8 +61,10 @@ static void Demo_GyroConfig(void);
 static void Demo_GyroReadAngRate (float* pfData);
 static void Gyro_SimpleCalibration(float* GyroData);
 
-uint8_t frame_cur[BMP_WIDTH*BMP_HEIGHT]; 
-static uint8_t frame_bmp[BMP_WIDTH*BMP_HEIGHT]; 
+uint8_t frame_cur[ACTIVE_WIDTH*ACTIVE_HEIGHT]; 
+
+// original image
+uint8_t frame_bmp[BMP_WIDTH*BMP_HEIGHT]; 
 
 
 /**
@@ -78,23 +80,28 @@ static void stabil_calc(void)
 * @param  None
 * @retval None
 */
-static void lcd_stabil_redraw(void)
+static void LCD_InitActiveZone(void)
 {
 	
     
 	int32_t i,j = 0;
   
+    
 	// fill the pict
-	for (i=0; i<LCD_SIZE_PIXEL_HEIGHT; i++)
+	for (i=0; i<ACTIVE_HEIGHT; i++)
     {
-        for (j=0; j<LCD_SIZE_PIXEL_WIDTH; j++) 
+        for (j=0; j<ACTIVE_WIDTH; j++) 
         {
-            if ((i<BMP_WIDTH)&&(j<BMP_HEIGHT)) frame_cur[i*LCD_SIZE_PIXEL_WIDTH + j] = frame_bmp[i*BMP_WIDTH + j];
-            else frame_cur[i*LCD_SIZE_PIXEL_WIDTH + j] = 128;
+            if ((j >= ACTIVE_WIDTH/2 - BMP_WIDTH/2)&&(j < ACTIVE_WIDTH/2 + BMP_WIDTH/2)&&
+                (i >= ACTIVE_HEIGHT/2 - BMP_HEIGHT/2)&&(i < ACTIVE_HEIGHT/2 + BMP_HEIGHT/2))
+                frame_cur[i*ACTIVE_WIDTH + j] = \
+                frame_bmp[(i - ACTIVE_HEIGHT/2 + BMP_HEIGHT/2)*BMP_WIDTH + j - ACTIVE_WIDTH/2 + BMP_WIDTH/2];
+            else frame_cur[i*ACTIVE_WIDTH + j] = 128;
         }
     }
+    
 	    
-	LCD_DrawActiveZone(LCD_SIZE_PIXEL_WIDTH/2, LCD_SIZE_PIXEL_HEIGHT/2, 255);
+	
 
 }
 
@@ -194,10 +201,17 @@ void LCD_DrawActiveZone(uint16_t horz_pos, uint16_t vert_pos, uint8_t back_color
             
             if ((j >= horz_pos - ACTIVE_WIDTH/2)&&(j < horz_pos + ACTIVE_WIDTH/2)&&
                 (i >= vert_pos - ACTIVE_HEIGHT/2)&&(i < vert_pos + ACTIVE_HEIGHT/2))
-                src_pixel = (frame_cur[(i - vert_pos + ACTIVE_HEIGHT/2)*ACTIVE_WIDTH + j - horz_pos + ACTIVE_WIDTH/2] >> 3);
+            {
+                // src_pixel = frame_cur[(i - vert_pos + ACTIVE_HEIGHT/2)*ACTIVE_WIDTH + j - horz_pos + ACTIVE_WIDTH/2] >> 3;
+            }
             else
-                src_pixel = back_color >> 3;
-			
+            {    
+                // src_pixel = back_color >> 3;
+			}
+            
+            ////
+            src_pixel = back_color >> 3;
+            
 			R_comp = src_pixel & 0x1F;
 			G_comp = (src_pixel << 1) & 0x3F;
 			B_comp = src_pixel & 0x1F;
@@ -205,7 +219,6 @@ void LCD_DrawActiveZone(uint16_t horz_pos, uint16_t vert_pos, uint8_t back_color
 			
 			*(__IO uint8_t*) (Address) = (uint8_t)(RGB565_pixel & 0xFF);
 			*(__IO uint8_t*) (Address+1) = (uint8_t)((RGB565_pixel >> 8) & 0xFF);
-			
 		}
 	}
 
@@ -228,77 +241,67 @@ RCC_ClocksTypeDef RCC_Clocks;
   */
 int main(void)
 {
-  /* At this stage the microcontroller clock setting is already configured, 
-  this is done through SystemInit() function which is called from startup
-  files (startup_stm32f429_439xx.s) before to branch to application main. 
-  To reconfigure the default setting of SystemInit() function, refer to
-  system_stm32f4xx.c file
-  */  
-	
-	//int32_t i,j = 0;
+    //int32_t i,j = 0;
   
 	/// fill the pict
 	//for (i=0; i<LCD_SIZE_PIXEL_WIDTH*LCD_SIZE_PIXEL_HEIGHT; i++) frame_cur[i] = i % 240;
 	
-	
-	
-  /* Initialize LEDs and user button on STM32F429I-DISCO board ****************/
-  STM_EVAL_LEDInit(LED3);
-  STM_EVAL_LEDInit(LED4);  
-  STM_EVAL_PBInit(BUTTON_USER, BUTTON_MODE_GPIO); 
+    /* Initialize LEDs and user button on STM32F429I-DISCO board ****************/
+    STM_EVAL_LEDInit(LED3);
+    STM_EVAL_LEDInit(LED4);  
+    STM_EVAL_PBInit(BUTTON_USER, BUTTON_MODE_GPIO); 
   
-  /* SysTick end of count event each 1 us */
-  RCC_GetClocksFreq(&RCC_Clocks);
-  SysTick_Config(RCC_Clocks.HCLK_Frequency / 1000000);
+    /* SysTick end of count event each 1 us */
+    RCC_GetClocksFreq(&RCC_Clocks);
+    SysTick_Config(RCC_Clocks.HCLK_Frequency / 1000000);
   
-  /* Initialize the LCD */
-  LCD_Init();
-  /* Initialize the LCD Layers*/
-  LCD_LayerInit();
+    /* Initialize the LCD */
+    LCD_Init();
+    /* Initialize the LCD Layers*/
+    LCD_LayerInit();
   
-  /* Enable the LTDC */
-  LTDC_Cmd(ENABLE);
+    /* Enable the LTDC */
+    LTDC_Cmd(ENABLE);
+    
+    /* Set LCD Background Layer  */
+    LCD_SetLayer(LCD_FOREGROUND_LAYER);
   
-  /* Set LCD Background Layer  */
-  LCD_SetLayer(LCD_FOREGROUND_LAYER);
-  
-  /* Clear the Background Layer */ 
-  LCD_Clear(LCD_COLOR_BLACK);
+    /* Clear the Background Layer */ 
+    LCD_Clear(LCD_COLOR_BLACK);
 	
 	/////
 	LCD_SetColors(LCD_COLOR_YELLOW, LCD_COLOR_BLACK);
 	LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)"LCD ready ***");
-  
-  /* Gyroscope configuration */
-  Demo_GyroConfig();
-  
-  /* Gyroscope calibration */
-  Gyro_SimpleCalibration(Gyro);
     
-  /* Enable INT1 interrupt */  
-  L3GD20_INT1InterruptCmd(ENABLE);
-  
-  /* Configure interrupts on all axes */
-  L3GD20_INT1InterruptConfig(L3GD20_AXES_INTERRUPT_ENABLE);
-  
-  if(EXTI_GetITStatus(EXTI_Line1) != RESET)
-  {
-    EXTI_ClearITPendingBit(EXTI_Line1);      
-  }
-  else
-  {
-    STM_EVAL_LEDOn(LED4);      
-  }
-  
-  /* Wait user button to be pressed */
-  while(STM_EVAL_PBGetState(BUTTON_USER) != RESET)
-  {
-  }
-  while(STM_EVAL_PBGetState(BUTTON_USER) != SET)
-  {
-  } 
-  /* Disable INT1 interrupt */  
-  L3GD20_INT1InterruptCmd(DISABLE);  
+    /* Gyroscope configuration */
+    Demo_GyroConfig();
+    
+    /* Gyroscope calibration */
+    Gyro_SimpleCalibration(Gyro);
+    
+    /* Enable INT1 interrupt */  
+    L3GD20_INT1InterruptCmd(ENABLE);
+    
+    /* Configure interrupts on all axes */
+    L3GD20_INT1InterruptConfig(L3GD20_AXES_INTERRUPT_ENABLE);
+    
+    if(EXTI_GetITStatus(EXTI_Line1) != RESET)
+    {
+        EXTI_ClearITPendingBit(EXTI_Line1);      
+    }
+    else
+    {
+        STM_EVAL_LEDOn(LED4);      
+    }
+    
+    /* Wait user button to be pressed */
+    while(STM_EVAL_PBGetState(BUTTON_USER) != RESET)
+    {}
+    while(STM_EVAL_PBGetState(BUTTON_USER) != SET)
+    {}
+    
+    /* Disable INT1 interrupt */  
+    L3GD20_INT1InterruptCmd(DISABLE);  
   
 	////
 	LCD_DisplayStringLine(LCD_LINE_1, (uint8_t*)"INT1 dis ***");
@@ -317,6 +320,7 @@ int main(void)
     sprintf((char*)str, "height=%d", bmp_height);
   	LCD_DisplayStringLine(LCD_LINE_3, (uint8_t*)str);
 
+    //LCD_InitActiveZone();
 
     while (1)
     {
@@ -325,14 +329,13 @@ int main(void)
         {
             //Demo_MEMS();	
             stabil_calc();
-            lcd_stabil_redraw();
+            
+            LCD_DrawActiveZone(LCD_SIZE_PIXEL_WIDTH/2, LCD_SIZE_PIXEL_HEIGHT/2, 128);
             
 			frame_cnt++;
 			if (frame_cnt == LCD_SIZE_PIXEL_WIDTH) frame_cnt = 0;
 			lcd_period_flag = 0;
 		}
-        
-    
     }
 }
 
