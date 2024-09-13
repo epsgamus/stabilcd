@@ -60,3 +60,4 @@ dkms.conf
 # MDK-ARM
 stabilcd.uvoptx
 stabilcd.uvguix.*
+**/DebugConfig
