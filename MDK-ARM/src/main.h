@@ -36,6 +36,12 @@
 #include "stdio.h"
 
 
+
+
+
+/* Exported constants --------------------------------------------------------*/
+
+
 // 278*327@6Mhz
 #define LCD_ILI9341_FPS						66.0022440762985941f
 #define LCD_ILI9341_PERIOD_USEC		15151ul
@@ -49,14 +55,33 @@
 #define  ACTIVE_WIDTH    150
 #define  ACTIVE_HEIGHT   150
 
+// math
+#define MATH_PI	3.141592653589793
+#define NORM_COEFF      2.0/150.0
+#define RECIP_NORM_COEFF      75.0
+
 /* Exported types ------------------------------------------------------------*/
-/* Exported constants --------------------------------------------------------*/
+typedef struct 
+{
+	float i1;
+	float i2;
+} vec_2_d;
+
+
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
 void Delay(__IO uint32_t nTime);
 void TimingDelay_Decrement(void);
 //void LCD_DrawActiveZone(uint16_t horz_pos, uint16_t vert_pos, uint8_t back_color);
 //uint32_t LCD_ReadBMP(uint32_t BmpAddress, uint8_t *dst_image, uint32_t *width, uint32_t *height);
+
+inline vec_2_d VectorSimpleRotation(vec_2_d vec_src, float phi)
+{
+    vec_2_d vec;
+    vec.i1 = cos(phi)*vec_src.i1 - sin(phi)*vec_src.i2;
+    vec.i2 = sin(phi)*vec_src.i1 + cos(phi)*vec_src.i2;
+    return vec;
+}
 
 #endif /* __MAIN_H */
 

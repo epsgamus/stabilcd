@@ -83,14 +83,15 @@ static void Gyro_SimpleCalibration(float* GyroData);
 */
 static float StabilPhiCalc(void)
 {
-    float phi = 0.0;
+    // tmply
+    float phi = MATH_PI/4.0;
     
     return phi;
 }
 
 /**
 * @brief  
-* @param  None
+* @param  dst active zone image address, src bmp image address
 * @retval None
 */
 static void InitActiveZone(uint8_t *dst_image, uint8_t *bmp_image)
@@ -104,33 +105,64 @@ static void InitActiveZone(uint8_t *dst_image, uint8_t *bmp_image)
                 (i >= ACTIVE_HEIGHT/2 - BMP_HEIGHT/2)&&(i < ACTIVE_HEIGHT/2 + BMP_HEIGHT/2))
                 *(dst_image + i*ACTIVE_WIDTH + j) = \
                 *(bmp_image + (i - ACTIVE_HEIGHT/2 + BMP_HEIGHT/2)*BMP_WIDTH + j - ACTIVE_WIDTH/2 + BMP_WIDTH/2);
-            else *(dst_image + i*ACTIVE_WIDTH + j) = 128;
+            else *(dst_image + i*ACTIVE_WIDTH + j) = 255;
         }
     }
 }
 
 
 /**
-* @brief  
-* @param  None
+* @brief  Rotate active zone
+* @param  dst image address, src image address, rotation angle, back color
 * @retval None
 */
-static void RotateActiveZone(uint8_t *dst_image, uint8_t *src_image, float phi)
+static void RotateActiveZone(uint8_t *dst_image, uint8_t *src_image, float phi, uint8_t back_color)
 {
-    /*
+    
+	uint32_t i,j;
+    // clr
+    for (i=0; i<ACTIVE_HEIGHT; i++)
+    {
+        for (j=0; j<ACTIVE_WIDTH; j++) 
+        {
+            dst_image[i*ACTIVE_WIDTH + j] = back_color;
+        }
+    }
+    
+    for (i=0; i<ACTIVE_HEIGHT; i++)
+    {
+        for (j=0; j<ACTIVE_WIDTH; j++) 
+        {
+            vec_2_d vec_src = {(float)(i-ACTIVE_HEIGHT/2)*NORM_COEFF, (float)(j-ACTIVE_WIDTH/2)*NORM_COEFF};
+            vec_2_d vec_dst = VectorSimpleRotation(vec_src, phi);
+            
+            uint32_t ii = (uint32_t)(RECIP_NORM_COEFF*vec_dst.i1 + ACTIVE_HEIGHT/2);
+            uint32_t jj = (uint32_t)(RECIP_NORM_COEFF*vec_dst.i2 + ACTIVE_WIDTH/2);
+            
+            if ((ii < ACTIVE_HEIGHT)&&(jj < ACTIVE_WIDTH)) \
+                dst_image[ii*ACTIVE_WIDTH + jj] = src_image[i*ACTIVE_WIDTH + j];
+            
+        }
+    }
+    
+}
+
+/**
+* @brief  Reassign (copy) active zone
+* @param  dst image address, src image address
+* @retval None
+*/
+static void ReassignActiveZone(uint8_t *dst_image, uint8_t *src_image)
+{
+    
 	uint32_t i,j;
     for (i=0; i<ACTIVE_HEIGHT; i++)
     {
         for (j=0; j<ACTIVE_WIDTH; j++) 
         {
-            if ((j >= ACTIVE_WIDTH/2 - BMP_WIDTH/2)&&(j < ACTIVE_WIDTH/2 + BMP_WIDTH/2)&&
-                (i >= ACTIVE_HEIGHT/2 - BMP_HEIGHT/2)&&(i < ACTIVE_HEIGHT/2 + BMP_HEIGHT/2))
-                frame_cur[i*ACTIVE_WIDTH + j] = \
-                frame_bmp[(i - ACTIVE_HEIGHT/2 + BMP_HEIGHT/2)*BMP_WIDTH + j - ACTIVE_WIDTH/2 + BMP_WIDTH/2];
-            else frame_cur[i*ACTIVE_WIDTH + j] = 128;
+            dst_image[i*ACTIVE_WIDTH + j] = src_image[i*ACTIVE_WIDTH + j];
         }
     }
-    */
 }
 
 
@@ -331,7 +363,7 @@ int main(void)
     sprintf((char*)str, "height=%d", bmp_height);
   	LCD_DisplayStringLine(LCD_LINE_2, (uint8_t*)str);
         
-    Delay(1000000);
+    Delay(500000);
 
     InitActiveZone((uint8_t*)frame_cur, (uint8_t*)frame_bmp);
 
@@ -341,15 +373,22 @@ int main(void)
         if (lcd_period_flag)
         {
             //Demo_MEMS();	
+
+            // redraw
+            DrawActiveZone((uint8_t*)frame_cur, LCD_SIZE_PIXEL_WIDTH/2, LCD_SIZE_PIXEL_HEIGHT/2, 255);
+
+            sprintf((char*)str, "F=%04d", frame_cnt);
+            LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)str);
+
             
             // calc phi
             float phi = StabilPhiCalc();
             
             // rotate
-            RotateActiveZone((uint8_t*)frame_new, (uint8_t*)frame_cur, phi);
-            
-            // redraw
-            DrawActiveZone((uint8_t*)frame_cur, LCD_SIZE_PIXEL_WIDTH/2, LCD_SIZE_PIXEL_HEIGHT/2, 255);
+            RotateActiveZone((uint8_t*)frame_new, (uint8_t*)frame_cur, phi, 255);
+        
+            // reassign
+            ReassignActiveZone((uint8_t*)frame_cur, (uint8_t*)frame_new);
             
 			frame_cnt++;
 			if (frame_cnt == LCD_SIZE_PIXEL_WIDTH) frame_cnt = 0;
