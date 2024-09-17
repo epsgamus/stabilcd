@@ -57,6 +57,9 @@
 #define MATH_PI	3.141592653589793F
 #define NORM_COEFF      2.0F/150.0F
 #define RECIP_NORM_COEFF      75.0F
+#define BLOOMING_EXCEN_MARGIN  0.1F
+#define BLOOMING_LO_THRESH  0.5F - BLOOMING_EXCEN_MARGIN
+#define BLOOMING_HI_THRESH  0.5F + BLOOMING_EXCEN_MARGIN
 
 /* Exported types ------------------------------------------------------------*/
 typedef struct 
@@ -73,12 +76,14 @@ void TimingDelay_Decrement(void);
 //void LCD_DrawActiveZone(uint16_t horz_pos, uint16_t vert_pos, uint8_t back_color);
 //uint32_t LCD_ReadBMP(uint32_t BmpAddress, uint8_t *dst_image, uint32_t *width, uint32_t *height);
 
-static inline vec_2_d VectorSimpleRotation(vec_2_d vec_src, float phi)
+static inline vec_2_d VectorSimpleRotation(vec_2_d src, float phi)
 {
-    vec_2_d vec;
-    vec.i1 = cos(phi)*vec_src.i1 - sin(phi)*vec_src.i2;
-    vec.i2 = sin(phi)*vec_src.i1 + cos(phi)*vec_src.i2;
-    return vec;
+    float x = (float)(src.i1 - (float)ACTIVE_HEIGHT/2)*NORM_COEFF;
+    float y = (float)(src.i2 - (float)ACTIVE_WIDTH/2)*NORM_COEFF;
+    vec_2_d dst;
+    dst.i1 = RECIP_NORM_COEFF*(cos(phi)*x - sin(phi)*y) + (float)ACTIVE_HEIGHT/2;
+    dst.i2 = RECIP_NORM_COEFF*(sin(phi)*x + cos(phi)*y) + (float)ACTIVE_WIDTH/2;
+    return dst;
 }
 
 #endif /* __MAIN_H */

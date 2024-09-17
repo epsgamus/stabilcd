@@ -84,7 +84,7 @@ static void Gyro_SimpleCalibration(float* GyroData);
 static float StabilPhiCalc(void)
 {
     // tmply
-    float phi = MATH_PI/16.0;
+    float phi = MATH_PI/2.0;
     
     return phi;
 }
@@ -133,18 +133,29 @@ static void RotateActiveZone(uint8_t *dst_image, uint8_t *src_image, float phi, 
     {
         for (j=0; j<ACTIVE_WIDTH; j++) 
         {
-            float x = (float)(i-ACTIVE_HEIGHT/2)*NORM_COEFF;
-            float y = (float)(j-ACTIVE_WIDTH/2)*NORM_COEFF;
-            vec_2_d vec_src = {x, y};
+            vec_2_d vec_src = {(float)i, (float)j};
             vec_2_d vec_dst = VectorSimpleRotation(vec_src, phi);
             
-            int32_t ii = (int32_t)(RECIP_NORM_COEFF*vec_dst.i1) + ACTIVE_HEIGHT/2;
-            int32_t jj = (int32_t)(RECIP_NORM_COEFF*vec_dst.i2) + ACTIVE_WIDTH/2;
-            //int32_t ii = i + 1;
-            //int32_t jj = j + 1;
+            // calc fraction of displacements
+            double i_int, j_int;
+            float i_frac = modf(vec_dst.i1, &i_int);
+            float j_frac = modf(vec_dst.i2, &j_int);
             
-            if ((ii > 0)&&(jj > 0)&&(ii < ACTIVE_HEIGHT)&&(jj < ACTIVE_WIDTH)) \
-                dst_image[ii*ACTIVE_WIDTH + jj] = src_image[i*ACTIVE_WIDTH + j];
+            uint32_t ii = (uint32_t)i_int; 
+            uint32_t jj = (uint32_t)j_int; 
+            
+            uint8_t px = src_image[i*ACTIVE_WIDTH + j];
+            if ((ii > 0)&&(jj > 0)&&(ii < ACTIVE_HEIGHT-1)&&(jj < ACTIVE_WIDTH-1)) 
+            {
+                dst_image[ii*ACTIVE_WIDTH + jj] = px;
+                // where to bloom horzly
+                if (i_frac < BLOOMING_LO_THRESH) dst_image[(ii - 1)*ACTIVE_WIDTH + jj] = px;
+                if (i_frac > BLOOMING_HI_THRESH) dst_image[(ii + 1)*ACTIVE_WIDTH + jj] = px;
+                // where to bloom vertly
+                if (j_frac < BLOOMING_LO_THRESH) dst_image[ii*ACTIVE_WIDTH + jj - 1] = px;
+                if (j_frac > BLOOMING_HI_THRESH) dst_image[ii*ACTIVE_WIDTH + jj + 1] = px;
+            }
+                
             
         }
     }
