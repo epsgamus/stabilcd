@@ -84,7 +84,7 @@ static void Gyro_SimpleCalibration(float* GyroData);
 static float StabilPhiCalc(void)
 {
     // tmply
-    float phi = MATH_PI/4.0;
+    float phi = MATH_PI/16.0;
     
     return phi;
 }
@@ -119,7 +119,7 @@ static void InitActiveZone(uint8_t *dst_image, uint8_t *bmp_image)
 static void RotateActiveZone(uint8_t *dst_image, uint8_t *src_image, float phi, uint8_t back_color)
 {
     
-	uint32_t i,j;
+	int32_t i,j;
     // clr
     for (i=0; i<ACTIVE_HEIGHT; i++)
     {
@@ -133,13 +133,17 @@ static void RotateActiveZone(uint8_t *dst_image, uint8_t *src_image, float phi, 
     {
         for (j=0; j<ACTIVE_WIDTH; j++) 
         {
-            vec_2_d vec_src = {(float)(i-ACTIVE_HEIGHT/2)*NORM_COEFF, (float)(j-ACTIVE_WIDTH/2)*NORM_COEFF};
+            float x = (float)(i-ACTIVE_HEIGHT/2)*NORM_COEFF;
+            float y = (float)(j-ACTIVE_WIDTH/2)*NORM_COEFF;
+            vec_2_d vec_src = {x, y};
             vec_2_d vec_dst = VectorSimpleRotation(vec_src, phi);
             
-            uint32_t ii = (uint32_t)(RECIP_NORM_COEFF*vec_dst.i1 + ACTIVE_HEIGHT/2);
-            uint32_t jj = (uint32_t)(RECIP_NORM_COEFF*vec_dst.i2 + ACTIVE_WIDTH/2);
+            int32_t ii = (int32_t)(RECIP_NORM_COEFF*vec_dst.i1) + ACTIVE_HEIGHT/2;
+            int32_t jj = (int32_t)(RECIP_NORM_COEFF*vec_dst.i2) + ACTIVE_WIDTH/2;
+            //int32_t ii = i + 1;
+            //int32_t jj = j + 1;
             
-            if ((ii < ACTIVE_HEIGHT)&&(jj < ACTIVE_WIDTH)) \
+            if ((ii > 0)&&(jj > 0)&&(ii < ACTIVE_HEIGHT)&&(jj < ACTIVE_WIDTH)) \
                 dst_image[ii*ACTIVE_WIDTH + jj] = src_image[i*ACTIVE_WIDTH + j];
             
         }

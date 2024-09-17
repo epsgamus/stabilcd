@@ -34,9 +34,7 @@
 #include "stm32f429i_discovery_lcd.h"
 #include "stm32f429i_discovery_l3gd20.h"
 #include "stdio.h"
-
-
-
+#include "math.h"
 
 
 /* Exported constants --------------------------------------------------------*/
@@ -56,9 +54,9 @@
 #define  ACTIVE_HEIGHT   150
 
 // math
-#define MATH_PI	3.141592653589793
-#define NORM_COEFF      2.0/150.0
-#define RECIP_NORM_COEFF      75.0
+#define MATH_PI	3.141592653589793F
+#define NORM_COEFF      2.0F/150.0F
+#define RECIP_NORM_COEFF      75.0F
 
 /* Exported types ------------------------------------------------------------*/
 typedef struct 
@@ -75,7 +73,7 @@ void TimingDelay_Decrement(void);
 //void LCD_DrawActiveZone(uint16_t horz_pos, uint16_t vert_pos, uint8_t back_color);
 //uint32_t LCD_ReadBMP(uint32_t BmpAddress, uint8_t *dst_image, uint32_t *width, uint32_t *height);
 
-inline vec_2_d VectorSimpleRotation(vec_2_d vec_src, float phi)
+static inline vec_2_d VectorSimpleRotation(vec_2_d vec_src, float phi)
 {
     vec_2_d vec;
     vec.i1 = cos(phi)*vec_src.i1 - sin(phi)*vec_src.i2;
