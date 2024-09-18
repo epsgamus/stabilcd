@@ -84,7 +84,7 @@ static void Gyro_SimpleCalibration(float* GyroData);
 static float StabilPhiCalc(void)
 {
     // tmply
-    float phi = 10*MATH_PI/180.0;
+    float phi = 6*MATH_PI/180.0;
     
     return phi;
 }
@@ -120,6 +120,7 @@ static void RotateActiveZone(uint8_t *dst_image, uint8_t *src_image, float phi, 
 {
     
 	int32_t i,j;
+    
     // clr
     for (i=0; i<ACTIVE_HEIGHT; i++)
     {
@@ -129,6 +130,7 @@ static void RotateActiveZone(uint8_t *dst_image, uint8_t *src_image, float phi, 
         }
     }
     
+    
     // fpu burden
     float cos_phi = cos(phi);
     float sin_phi = sin(phi);
@@ -137,6 +139,11 @@ static void RotateActiveZone(uint8_t *dst_image, uint8_t *src_image, float phi, 
     {
         for (j=0; j<ACTIVE_WIDTH; j++) 
         {
+            uint8_t px = src_image[i*ACTIVE_WIDTH + j];
+            
+            // skip ordinary dots
+            if (px == back_color) continue;
+                
             vec_2_d vec_src = {(float)i, (float)j};
             
             // new displacements
@@ -150,7 +157,7 @@ static void RotateActiveZone(uint8_t *dst_image, uint8_t *src_image, float phi, 
             uint32_t ii = (uint32_t)i_int; 
             uint32_t jj = (uint32_t)j_int; 
             
-            uint8_t px = src_image[i*ACTIVE_WIDTH + j];
+            
             if ((ii > 0)&&(jj > 0)&&(ii < ACTIVE_HEIGHT-1)&&(jj < ACTIVE_WIDTH-1)) 
             {
                 dst_image[ii*ACTIVE_WIDTH + jj] = px;
@@ -400,11 +407,12 @@ int main(void)
             //Demo_MEMS();	
 
             // rotate
-            RotateActiveZone((uint8_t*)frame_new, (uint8_t*)frame_cur, phi, 255);
+            RotateActiveZone((uint8_t*)frame_new, (uint8_t*)frame_cur, phi, BACKGR_COLOR);
 
             // redraw
-            DrawActiveZone((uint8_t*)frame_new, LCD_SIZE_PIXEL_WIDTH/2, LCD_SIZE_PIXEL_HEIGHT/2, 255);
+            DrawActiveZone((uint8_t*)frame_new, LCD_SIZE_PIXEL_WIDTH/2, LCD_SIZE_PIXEL_HEIGHT/2, BACKGR_COLOR);
 
+            // tmply
             sprintf((char*)str, "F=%04d", frame_cnt);
             LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)str);
 

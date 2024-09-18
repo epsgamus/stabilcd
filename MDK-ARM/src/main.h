@@ -53,6 +53,9 @@
 #define  ACTIVE_WIDTH    150
 #define  ACTIVE_HEIGHT   150
 
+// back
+#define BACKGR_COLOR    255
+
 // math
 #define MATH_PI	3.141592653589793F
 #define NORM_COEFF      2.0F/150.0F
