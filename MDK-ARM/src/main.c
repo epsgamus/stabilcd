@@ -84,7 +84,7 @@ static void Gyro_SimpleCalibration(float* GyroData);
 static float StabilPhiCalc(void)
 {
     // tmply
-    float phi = MATH_PI/2.0;
+    float phi = 10*MATH_PI/180.0;
     
     return phi;
 }
@@ -129,14 +129,20 @@ static void RotateActiveZone(uint8_t *dst_image, uint8_t *src_image, float phi, 
         }
     }
     
+    // fpu burden
+    float cos_phi = cos(phi);
+    float sin_phi = sin(phi);
+    
     for (i=0; i<ACTIVE_HEIGHT; i++)
     {
         for (j=0; j<ACTIVE_WIDTH; j++) 
         {
             vec_2_d vec_src = {(float)i, (float)j};
-            vec_2_d vec_dst = VectorSimpleRotation(vec_src, phi);
             
-            // calc fraction of displacements
+            // new displacements
+            vec_2_d vec_dst = VectorSimpleRotation(vec_src, cos_phi, sin_phi);
+            
+            // their fraction parts
             double i_int, j_int;
             float i_frac = modf(vec_dst.i1, &i_int);
             float j_frac = modf(vec_dst.i2, &j_int);
@@ -148,12 +154,14 @@ static void RotateActiveZone(uint8_t *dst_image, uint8_t *src_image, float phi, 
             if ((ii > 0)&&(jj > 0)&&(ii < ACTIVE_HEIGHT-1)&&(jj < ACTIVE_WIDTH-1)) 
             {
                 dst_image[ii*ACTIVE_WIDTH + jj] = px;
+                
                 // where to bloom horzly
                 if (i_frac < BLOOMING_LO_THRESH) dst_image[(ii - 1)*ACTIVE_WIDTH + jj] = px;
                 if (i_frac > BLOOMING_HI_THRESH) dst_image[(ii + 1)*ACTIVE_WIDTH + jj] = px;
                 // where to bloom vertly
                 if (j_frac < BLOOMING_LO_THRESH) dst_image[ii*ACTIVE_WIDTH + jj - 1] = px;
                 if (j_frac > BLOOMING_HI_THRESH) dst_image[ii*ACTIVE_WIDTH + jj + 1] = px;
+                
             }
                 
             
@@ -381,6 +389,8 @@ int main(void)
     Delay(500000);
 
     InitActiveZone((uint8_t*)frame_cur, (uint8_t*)frame_bmp);
+    
+    float phi = 0.0;
 
     while (1)
     {
@@ -389,21 +399,22 @@ int main(void)
         {
             //Demo_MEMS();	
 
+            // rotate
+            RotateActiveZone((uint8_t*)frame_new, (uint8_t*)frame_cur, phi, 255);
+
             // redraw
-            DrawActiveZone((uint8_t*)frame_cur, LCD_SIZE_PIXEL_WIDTH/2, LCD_SIZE_PIXEL_HEIGHT/2, 255);
+            DrawActiveZone((uint8_t*)frame_new, LCD_SIZE_PIXEL_WIDTH/2, LCD_SIZE_PIXEL_HEIGHT/2, 255);
 
             sprintf((char*)str, "F=%04d", frame_cnt);
             LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)str);
 
+    
+            // integrate calc phi
+            phi += StabilPhiCalc();
             
-            // calc phi
-            float phi = StabilPhiCalc();
-            
-            // rotate
-            RotateActiveZone((uint8_t*)frame_new, (uint8_t*)frame_cur, phi, 255);
         
             // reassign
-            ReassignActiveZone((uint8_t*)frame_cur, (uint8_t*)frame_new);
+            //ReassignActiveZone((uint8_t*)frame_cur, (uint8_t*)frame_new);
             
 			frame_cnt++;
 			if (frame_cnt == LCD_SIZE_PIXEL_WIDTH) frame_cnt = 0;

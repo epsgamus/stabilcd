@@ -76,13 +76,13 @@ void TimingDelay_Decrement(void);
 //void LCD_DrawActiveZone(uint16_t horz_pos, uint16_t vert_pos, uint8_t back_color);
 //uint32_t LCD_ReadBMP(uint32_t BmpAddress, uint8_t *dst_image, uint32_t *width, uint32_t *height);
 
-static inline vec_2_d VectorSimpleRotation(vec_2_d src, float phi)
+static inline vec_2_d VectorSimpleRotation(vec_2_d src, float cos_phi, float sin_phi)
 {
-    float x = (float)(src.i1 - (float)ACTIVE_HEIGHT/2)*NORM_COEFF;
-    float y = (float)(src.i2 - (float)ACTIVE_WIDTH/2)*NORM_COEFF;
+    float x = (src.i1 - ACTIVE_HEIGHT/2)*NORM_COEFF;
+    float y = (src.i2 - ACTIVE_WIDTH/2)*NORM_COEFF;
     vec_2_d dst;
-    dst.i1 = RECIP_NORM_COEFF*(cos(phi)*x - sin(phi)*y) + (float)ACTIVE_HEIGHT/2;
-    dst.i2 = RECIP_NORM_COEFF*(sin(phi)*x + cos(phi)*y) + (float)ACTIVE_WIDTH/2;
+    dst.i1 = RECIP_NORM_COEFF*(cos_phi*x - sin_phi*y) + ACTIVE_HEIGHT/2;
+    dst.i2 = RECIP_NORM_COEFF*(sin_phi*x + cos_phi*y) + ACTIVE_WIDTH/2;
     return dst;
 }
 
