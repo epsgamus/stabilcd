@@ -214,10 +214,10 @@ typedef struct
 /** @defgroup OutPut_DataRate_Selection 
   * @{
   */
-#define L3GD20_OUTPUT_DATARATE_1    ((uint8_t)0x00)
-#define L3GD20_OUTPUT_DATARATE_2    ((uint8_t)0x40)
-#define L3GD20_OUTPUT_DATARATE_3    ((uint8_t)0x80)
-#define L3GD20_OUTPUT_DATARATE_4    ((uint8_t)0xC0)
+#define L3GD20_OUTPUT_DATARATE_95HZ     ((uint8_t)0x00)
+#define L3GD20_OUTPUT_DATARATE_190HZ    ((uint8_t)0x40)
+#define L3GD20_OUTPUT_DATARATE_380HZ    ((uint8_t)0x80)
+#define L3GD20_OUTPUT_DATARATE_760HZ    ((uint8_t)0xC0)
 /**
   * @}
   */
@@ -248,10 +248,20 @@ typedef struct
 /** @defgroup BandWidth_Selection 
   * @{
   */
-#define L3GD20_BANDWIDTH_1         ((uint8_t)0x00)
-#define L3GD20_BANDWIDTH_2         ((uint8_t)0x10)
-#define L3GD20_BANDWIDTH_3         ((uint8_t)0x20)
-#define L3GD20_BANDWIDTH_4         ((uint8_t)0x30)
+#define L3GD20_ODR95_BANDWIDTH_12d5HZ       ((uint8_t)0x00)
+#define L3GD20_ODR95_BANDWIDTH_25HZ         ((uint8_t)0x30)
+#define L3GD20_ODR190_BANDWIDTH_12d5HZ       ((uint8_t)0x00)
+#define L3GD20_ODR190_BANDWIDTH_25HZ         ((uint8_t)0x10)
+#define L3GD20_ODR190_BANDWIDTH_50HZ         ((uint8_t)0x20)
+#define L3GD20_ODR190_BANDWIDTH_70HZ         ((uint8_t)0x30)
+#define L3GD20_ODR380_BANDWIDTH_20HZ         ((uint8_t)0x00)
+#define L3GD20_ODR380_BANDWIDTH_25HZ         ((uint8_t)0x10)
+#define L3GD20_ODR380_BANDWIDTH_50HZ         ((uint8_t)0x20)
+#define L3GD20_ODR380_BANDWIDTH_100HZ        ((uint8_t)0x30)
+#define L3GD20_ODR760_BANDWIDTH_30HZ         ((uint8_t)0x00)
+#define L3GD20_ODR760_BANDWIDTH_35HZ         ((uint8_t)0x10)
+#define L3GD20_ODR760_BANDWIDTH_50HZ         ((uint8_t)0x20)
+#define L3GD20_ODR760_BANDWIDTH_100HZ        ((uint8_t)0x30)
 /**
   * @}
   */
@@ -343,16 +353,49 @@ typedef struct
 /** @defgroup High_Pass_CUT OFF_Frequency 
   * @{
   */   
-#define L3GD20_HPFCF_0              0x00
-#define L3GD20_HPFCF_1              0x01
-#define L3GD20_HPFCF_2              0x02
-#define L3GD20_HPFCF_3              0x03
-#define L3GD20_HPFCF_4              0x04
-#define L3GD20_HPFCF_5              0x05
-#define L3GD20_HPFCF_6              0x06
-#define L3GD20_HPFCF_7              0x07
-#define L3GD20_HPFCF_8              0x08
-#define L3GD20_HPFCF_9              0x09
+#define L3GD20_HPFCF_ODR95_7d2HZ    0x00
+#define L3GD20_HPFCF_ODR95_3d5HZ    0x01
+#define L3GD20_HPFCF_ODR95_1d8HZ    0x02
+#define L3GD20_HPFCF_ODR95_0d9HZ    0x03
+#define L3GD20_HPFCF_ODR95_0d45HZ   0x04
+#define L3GD20_HPFCF_ODR95_0d18HZ   0x05
+#define L3GD20_HPFCF_ODR95_0d09HZ   0x06
+#define L3GD20_HPFCF_ODR95_0d045HZ  0x07
+#define L3GD20_HPFCF_ODR95_0d018HZ  0x08
+#define L3GD20_HPFCF_ODR95_0d009HZ  0x09
+
+#define L3GD20_HPFCF_ODR190_13d5HZ   0x00
+#define L3GD20_HPFCF_ODR190_7d2HZ    0x01
+#define L3GD20_HPFCF_ODR190_3d5HZ    0x02
+#define L3GD20_HPFCF_ODR190_1d8HZ    0x03
+#define L3GD20_HPFCF_ODR190_0d9HZ    0x04
+#define L3GD20_HPFCF_ODR190_0d45HZ   0x05
+#define L3GD20_HPFCF_ODR190_0d18HZ   0x06
+#define L3GD20_HPFCF_ODR190_0d09HZ   0x07
+#define L3GD20_HPFCF_ODR190_0d045HZ  0x08
+#define L3GD20_HPFCF_ODR190_0d018HZ  0x09
+
+#define L3GD20_HPFCF_ODR380_27HZ     0x00
+#define L3GD20_HPFCF_ODR380_13d5HZ   0x01
+#define L3GD20_HPFCF_ODR380_7d2HZ    0x02
+#define L3GD20_HPFCF_ODR380_3d5HZ    0x03
+#define L3GD20_HPFCF_ODR380_1d8HZ    0x04
+#define L3GD20_HPFCF_ODR380_0d9HZ    0x05
+#define L3GD20_HPFCF_ODR380_0d45HZ   0x06
+#define L3GD20_HPFCF_ODR380_0d18HZ   0x07
+#define L3GD20_HPFCF_ODR380_0d09HZ   0x08
+#define L3GD20_HPFCF_ODR380_0d045HZ  0x09
+
+#define L3GD20_HPFCF_ODR760_51d4HZ   0x00
+#define L3GD20_HPFCF_ODR760_27HZ     0x01
+#define L3GD20_HPFCF_ODR760_13d5HZ   0x02
+#define L3GD20_HPFCF_ODR760_7d2HZ    0x03
+#define L3GD20_HPFCF_ODR760_3d5HZ    0x04
+#define L3GD20_HPFCF_ODR760_1d8HZ    0x05
+#define L3GD20_HPFCF_ODR760_0d9HZ    0x06
+#define L3GD20_HPFCF_ODR760_0d45HZ   0x07
+#define L3GD20_HPFCF_ODR760_0d18HZ   0x08
+#define L3GD20_HPFCF_ODR760_0d09HZ   0x09
 /**
   * @}
   */

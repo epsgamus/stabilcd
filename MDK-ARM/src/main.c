@@ -310,122 +310,6 @@ static void DrawActiveZone(uint8_t *img, uint16_t horz_pos, uint16_t vert_pos, u
 }
 
 
-/**
-  * @brief  Main program
-  * @param  None
-  * @retval None
-  */
-int main(void)
-{
-
-    /* Initialize LEDs and user button on STM32F429I-DISCO board ****************/
-    STM_EVAL_LEDInit(LED3);
-    STM_EVAL_LEDInit(LED4);  
-    STM_EVAL_PBInit(BUTTON_USER, BUTTON_MODE_GPIO); 
-  
-    /* SysTick end of count event each 1 us */
-    RCC_GetClocksFreq(&RCC_Clocks);
-    SysTick_Config(RCC_Clocks.HCLK_Frequency / 1000000);
-  
-    /* Initialize the LCD */
-    LCD_Init();
-    /* Initialize the LCD Layers*/
-    LCD_LayerInit();
-  
-    /* Enable the LTDC */
-    LTDC_Cmd(ENABLE);
-    
-    /* Set LCD Background Layer  */
-    LCD_SetLayer(LCD_FOREGROUND_LAYER);
-  
-    /* Clear the Background Layer */ 
-    LCD_Clear(LCD_COLOR_BLACK);
-	
-	/////
-	LCD_SetColors(LCD_COLOR_YELLOW, LCD_COLOR_BLACK);
-	LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)"LCD ready ***");
-    
-    /* Gyroscope configuration */
-    Demo_GyroConfig();
-    
-    /* Gyroscope calibration */
-    Gyro_SimpleCalibration(Gyro);
-    
-    /* Enable INT1 interrupt */  
-    L3GD20_INT1InterruptCmd(ENABLE);
-    
-    /* Configure interrupts on all axes */
-    L3GD20_INT1InterruptConfig(L3GD20_AXES_INTERRUPT_ENABLE);
-    
-    if(EXTI_GetITStatus(EXTI_Line1) != RESET)
-    {
-        EXTI_ClearITPendingBit(EXTI_Line1);      
-    }
-    else
-    {
-        STM_EVAL_LEDOn(LED4);      
-    }
-    
-    /* Wait user button to be pressed */
-    while(STM_EVAL_PBGetState(BUTTON_USER) != RESET)
-    {}
-    while(STM_EVAL_PBGetState(BUTTON_USER) != SET)
-    {}
-    
-    /* Disable INT1 interrupt */  
-    L3GD20_INT1InterruptCmd(DISABLE);  
-	
-	LCD_Clear(LCD_COLOR_BLACK);
-	
-    // BMP read
-    uint32_t bmp_width, bmp_height;
-    uint32_t bytes = ReadBMP(IMG_BMP_ADDR, (uint8_t*)frame_bmp, &bmp_width, &bmp_height);
-
-    uint8_t str[20];
-    sprintf((char*)str, "BMP read Ok");
-  	LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)str);
-    sprintf((char*)str, "width=%d", bmp_width);
-  	LCD_DisplayStringLine(LCD_LINE_1, (uint8_t*)str);
-    sprintf((char*)str, "height=%d", bmp_height);
-  	LCD_DisplayStringLine(LCD_LINE_2, (uint8_t*)str);
-        
-    Delay(500000);
-
-    InitActiveZone((uint8_t*)frame_cur, (uint8_t*)frame_bmp);
-    
-    float phi = 0.0;
-
-    while (1)
-    {
-        
-        if (lcd_period_flag)
-        {
-            //Demo_MEMS();	
-
-            // rotate
-            RotateActiveZone((uint8_t*)frame_new, (uint8_t*)frame_cur, phi, BACKGR_COLOR);
-
-            // redraw
-            DrawActiveZone((uint8_t*)frame_new, LCD_SIZE_PIXEL_WIDTH/2, LCD_SIZE_PIXEL_HEIGHT/2, BACKGR_COLOR);
-
-            // tmply
-            sprintf((char*)str, "F=%04d", frame_cnt);
-            LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)str);
-
-    
-            // integrate calc phi
-            phi += StabilPhiCalc();
-            
-        
-            // reassign
-            //ReassignActiveZone((uint8_t*)frame_cur, (uint8_t*)frame_new);
-            
-			frame_cnt++;
-			if (frame_cnt == LCD_ILI9341_FPS_INT + 1) frame_cnt = 0;
-			lcd_period_flag = 0;
-		}
-    }
-}
 
 /**
 * @brief  Mems gyroscope Demo application.
@@ -652,6 +536,124 @@ void TimingDelay_Decrement(void)
     TimingDelay--;
   }
 }
+
+/**
+  * @brief  Main program
+  * @param  None
+  * @retval None
+  */
+int main(void)
+{
+
+    /* Initialize LEDs and user button on STM32F429I-DISCO board ****************/
+    STM_EVAL_LEDInit(LED3);
+    STM_EVAL_LEDInit(LED4);  
+    STM_EVAL_PBInit(BUTTON_USER, BUTTON_MODE_GPIO); 
+  
+    /* SysTick end of count event each 1 us */
+    RCC_GetClocksFreq(&RCC_Clocks);
+    SysTick_Config(RCC_Clocks.HCLK_Frequency / 1000000);
+  
+    /* Initialize the LCD */
+    LCD_Init();
+    /* Initialize the LCD Layers*/
+    LCD_LayerInit();
+  
+    /* Enable the LTDC */
+    LTDC_Cmd(ENABLE);
+    
+    /* Set LCD Background Layer  */
+    LCD_SetLayer(LCD_FOREGROUND_LAYER);
+  
+    /* Clear the Background Layer */ 
+    LCD_Clear(LCD_COLOR_BLACK);
+	
+	/////
+	LCD_SetColors(LCD_COLOR_YELLOW, LCD_COLOR_BLACK);
+	LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)"LCD ready ***");
+    
+    /* Gyroscope configuration */
+    Demo_GyroConfig();
+    
+    /* Gyroscope calibration */
+    Gyro_SimpleCalibration(Gyro);
+    
+    /* Enable INT1 interrupt */  
+    L3GD20_INT1InterruptCmd(ENABLE);
+    
+    /* Configure interrupts on all axes */
+    L3GD20_INT1InterruptConfig(L3GD20_AXES_INTERRUPT_ENABLE);
+    
+    if(EXTI_GetITStatus(EXTI_Line1) != RESET)
+    {
+        EXTI_ClearITPendingBit(EXTI_Line1);      
+    }
+    else
+    {
+        STM_EVAL_LEDOn(LED4);      
+    }
+    
+    /* Wait user button to be pressed */
+    while(STM_EVAL_PBGetState(BUTTON_USER) != RESET)
+    {}
+    while(STM_EVAL_PBGetState(BUTTON_USER) != SET)
+    {}
+    
+    /* Disable INT1 interrupt */  
+    L3GD20_INT1InterruptCmd(DISABLE);  
+	
+	LCD_Clear(LCD_COLOR_BLACK);
+	
+    // BMP read
+    uint32_t bmp_width, bmp_height;
+    uint32_t bytes = ReadBMP(IMG_BMP_ADDR, (uint8_t*)frame_bmp, &bmp_width, &bmp_height);
+
+    uint8_t str[20];
+    sprintf((char*)str, "BMP read Ok");
+  	LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)str);
+    sprintf((char*)str, "width=%d", bmp_width);
+  	LCD_DisplayStringLine(LCD_LINE_1, (uint8_t*)str);
+    sprintf((char*)str, "height=%d", bmp_height);
+  	LCD_DisplayStringLine(LCD_LINE_2, (uint8_t*)str);
+        
+    Delay(500000);
+
+    InitActiveZone((uint8_t*)frame_cur, (uint8_t*)frame_bmp);
+    
+    float phi = 0.0;
+
+    while (1)
+    {
+        
+        if (lcd_period_flag)
+        {
+            //Demo_MEMS();	
+
+            // rotate
+            RotateActiveZone((uint8_t*)frame_new, (uint8_t*)frame_cur, phi, BACKGR_COLOR);
+
+            // redraw
+            DrawActiveZone((uint8_t*)frame_new, LCD_SIZE_PIXEL_WIDTH/2, LCD_SIZE_PIXEL_HEIGHT/2, BACKGR_COLOR);
+
+            // tmply
+            sprintf((char*)str, "F=%04d", frame_cnt);
+            LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)str);
+
+    
+            // integrate calc phi
+            phi += StabilPhiCalc();
+            
+        
+            // reassign
+            //ReassignActiveZone((uint8_t*)frame_cur, (uint8_t*)frame_new);
+            
+			frame_cnt++;
+			if (frame_cnt == LCD_ILI9341_FPS_INT + 1) frame_cnt = 0;
+			lcd_period_flag = 0;
+		}
+    }
+}
+
 
 #ifdef  USE_FULL_ASSERT
 
