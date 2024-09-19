@@ -41,8 +41,10 @@
 
 
 // 278*327@6Mhz
-#define LCD_ILI9341_FPS						66.0022440762985941f
-#define LCD_ILI9341_PERIOD_USEC		15151ul
+#define LCD_ILI9341_FPS_MAX					66.0022440762985941f
+#define LCD_ILI9341_FPS_INT						33
+#define LCD_ILI9341_PERIOD_USEC_MIN		15151ul
+#define LCD_ILI9341_PERIOD_USEC		30000ul
 #define IMG_BMP_ADDR    0x08100000UL
 
 // source BMP sizes
@@ -81,11 +83,18 @@ void TimingDelay_Decrement(void);
 
 static inline vec_2_d VectorSimpleRotation(vec_2_d src, float cos_phi, float sin_phi)
 {
+    /*
     float x = (src.i1 - ACTIVE_HEIGHT/2)*NORM_COEFF;
     float y = (src.i2 - ACTIVE_WIDTH/2)*NORM_COEFF;
     vec_2_d dst;
     dst.i1 = RECIP_NORM_COEFF*(cos_phi*x - sin_phi*y) + ACTIVE_HEIGHT/2;
     dst.i2 = RECIP_NORM_COEFF*(sin_phi*x + cos_phi*y) + ACTIVE_WIDTH/2;
+    */
+    float x = (src.i1 - ACTIVE_HEIGHT/2);
+    float y = (src.i2 - ACTIVE_WIDTH/2);
+    vec_2_d dst;
+    dst.i1 = (cos_phi*x - sin_phi*y) + ACTIVE_HEIGHT/2;
+    dst.i2 = (sin_phi*x + cos_phi*y) + ACTIVE_WIDTH/2;
     return dst;
 }
 

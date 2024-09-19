@@ -84,7 +84,7 @@ static void Gyro_SimpleCalibration(float* GyroData);
 static float StabilPhiCalc(void)
 {
     // tmply
-    float phi = 6*MATH_PI/180.0;
+    float phi = (360/LCD_ILI9341_FPS_INT)*MATH_PI/180.0;
     
     return phi;
 }
@@ -141,7 +141,7 @@ static void RotateActiveZone(uint8_t *dst_image, uint8_t *src_image, float phi, 
         {
             uint8_t px = src_image[i*ACTIVE_WIDTH + j];
             
-            // skip ordinary dots
+            // skip points of no interest
             if (px == back_color) continue;
                 
             vec_2_d vec_src = {(float)i, (float)j};
@@ -317,11 +317,7 @@ static void DrawActiveZone(uint8_t *img, uint16_t horz_pos, uint16_t vert_pos, u
   */
 int main(void)
 {
-    //int32_t i,j = 0;
-  
-	/// fill the pict
-	//for (i=0; i<ACTIVE_WIDTH*ACTIVE_HEIGHT; i++) frame_cur[i] = i % 240;
-	
+
     /* Initialize LEDs and user button on STM32F429I-DISCO board ****************/
     STM_EVAL_LEDInit(LED3);
     STM_EVAL_LEDInit(LED4);  
@@ -425,7 +421,7 @@ int main(void)
             //ReassignActiveZone((uint8_t*)frame_cur, (uint8_t*)frame_new);
             
 			frame_cnt++;
-			if (frame_cnt == LCD_SIZE_PIXEL_WIDTH) frame_cnt = 0;
+			if (frame_cnt == LCD_ILI9341_FPS_INT + 1) frame_cnt = 0;
 			lcd_period_flag = 0;
 		}
     }

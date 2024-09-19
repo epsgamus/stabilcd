@@ -338,7 +338,7 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>USE_STDPERIPH_DRIVER,STM32F429_439xx,USE_STM32F429I_DISCO, __TARGET_FPU_VFP</Define>
+              <Define>USE_STDPERIPH_DRIVER,STM32F429_439xx,USE_STM32F429I_DISCO</Define>
               <Undefine></Undefine>
               <IncludePath>.\STM32F4xx;.\STM32F429I-Discovery;.\STM32F4xx_StdPeriph_Driver\inc;.\src;.\fonts</IncludePath>
             </VariousControls>
