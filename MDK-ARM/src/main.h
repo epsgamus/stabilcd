@@ -39,6 +39,8 @@
 
 /* Exported constants --------------------------------------------------------*/
 
+// gyro period, ODR=95HZ
+#define GYRO_ODR95_PERIOD_USEC		10526ul
 
 // 278*327@6Mhz
 #define LCD_ILI9341_FPS_MAX					66.0022440762985941f

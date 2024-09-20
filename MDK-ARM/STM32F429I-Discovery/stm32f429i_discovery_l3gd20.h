@@ -121,6 +121,12 @@ typedef struct
    conditions (interrupts routines ...). */   
 #define L3GD20_FLAG_TIMEOUT             ((uint32_t)0x1000)
 
+// scale specific const
+#define L3G_Sensitivity_250dps     (float)114.285f        /*!< gyroscope sensitivity with 250 dps full scale [LSB/dps]  */
+#define L3G_Sensitivity_500dps     (float)57.1429f        /*!< gyroscope sensitivity with 500 dps full scale [LSB/dps]  */
+#define L3G_Sensitivity_2000dps    (float)14.285f         /*!< gyroscope sensitivity with 2000 dps full scale [LSB/dps] */
+
+
 /**
   * @brief  L3GD20 SPI Interface pins
   */
@@ -276,6 +282,8 @@ typedef struct
   * @}
   */
   
+
+  
 /** @defgroup Block_Data_Update 
   * @{
   */  
@@ -418,6 +426,7 @@ void L3GD20_RebootCmd(void);
 void L3GD20_INT1InterruptCmd(uint8_t InterruptState);
 void L3GD20_INT2InterruptCmd(uint8_t InterruptState);
 void L3GD20_INT1InterruptConfig(uint8_t Interrupt_Axes);
+void L3GD20_INT2InterruptConfig(void);
 uint8_t L3GD20_GetDataStatus(void);
 
 /* High Pass Filter Configuration Functions */

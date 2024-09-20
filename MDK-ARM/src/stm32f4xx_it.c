@@ -45,6 +45,7 @@
 uint8_t pBuffer;
 uint32_t systick_cnt = 0;
 extern uint8_t lcd_period_flag;
+extern float phi_integrated;
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 
@@ -165,6 +166,9 @@ void SysTick_Handler(void)
 /*  file (startup_stm32f429_439xx.s).                                               */
 /******************************************************************************/
 
+#define GYRO_ODR95_PERIOD_SEC		0.01052632F
+
+
 /**
   * @brief  This function handles PPP interrupt request.
   * @param  None
@@ -172,14 +176,22 @@ void SysTick_Handler(void)
   */
 void EXTI1_IRQHandler(void)
 {
-    if(EXTI_GetITStatus(EXTI_Line1) != RESET)
-  {
-    /*  LED3 On */   
-    STM_EVAL_LEDOff(LED4);
-    STM_EVAL_LEDOn(LED3);
-  }
-  EXTI_ClearITPendingBit(EXTI_Line1);   
-  L3GD20_Read(&pBuffer, L3GD20_INT1_SRC_ADDR, 1);
+   uint8_t tmpbuffer[6];
+   if(EXTI_GetITStatus(L3GD20_SPI_INT2_EXTI_LINE) != RESET)
+    {
+        /*  LED3 On */   
+        //STM_EVAL_LEDOff(LED4);
+        //STM_EVAL_LEDOn(LED3);
+    }
+    EXTI_ClearITPendingBit(L3GD20_SPI_INT2_EXTI_LINE);   
+    //L3GD20_Read(&pBuffer, L3GD20_INT1_SRC_ADDR, 1);
+    
+    // readout FIFO head
+    L3GD20_Read(tmpbuffer, L3GD20_OUT_X_L_ADDR, 6);
+    // Z-axis in particular
+    float omega_z = (float) (((uint16_t)tmpbuffer[5] << 8) | (uint16_t)tmpbuffer[4]) / L3G_Sensitivity_250dps;
+    // integrate
+    phi_integrated += omega_z*GYRO_ODR95_PERIOD_SEC;
 }
 
 

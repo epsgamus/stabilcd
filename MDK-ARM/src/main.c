@@ -41,10 +41,13 @@
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 #define ABS(x)                     (x < 0) ? (-x) : x
+
+#if 0
 #define L3G_Sensitivity_250dps     (float)114.285f        /*!< gyroscope sensitivity with 250 dps full scale [LSB/dps]  */
 #define L3G_Sensitivity_500dps     (float)57.1429f        /*!< gyroscope sensitivity with 500 dps full scale [LSB/dps]  */
 #define L3G_Sensitivity_2000dps    (float)14.285f         /*!< gyroscope sensitivity with 2000 dps full scale [LSB/dps] */
-	
+#endif	
+    
 uint8_t lcd_period_flag = 0;
 uint32_t frame_cnt = 0;
 
@@ -53,6 +56,8 @@ float Buffer[6];
 float Gyro[3];
 float X_BiasError, Y_BiasError, Z_BiasError = 0.0;
 uint8_t Xval, Yval = 0x00;
+
+float phi_integrated = 0.0;
 
 static __IO uint32_t TimingDelay;
 RCC_ClocksTypeDef RCC_Clocks;
@@ -69,8 +74,6 @@ uint8_t frame_bmp[BMP_WIDTH*BMP_HEIGHT];
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
-static void Demo_MEMS(void);
-static void Demo_GyroConfig(void);
 static void Demo_GyroReadAngRate (float* pfData);
 static void Gyro_SimpleCalibration(float* GyroData);
 
@@ -84,7 +87,7 @@ static void Gyro_SimpleCalibration(float* GyroData);
 static float StabilPhiCalc(void)
 {
     // tmply
-    float phi = (360/LCD_ILI9341_FPS_INT)*MATH_PI/180.0;
+    float phi = (360.0/LCD_ILI9341_FPS_INT)*MATH_PI/180.0;
     
     return phi;
 }
@@ -177,6 +180,7 @@ static void RotateActiveZone(uint8_t *dst_image, uint8_t *src_image, float phi, 
     
 }
 
+#if 0
 /**
 * @brief  Reassign (copy) active zone
 * @param  dst image address, src image address
@@ -194,7 +198,7 @@ static void ReassignActiveZone(uint8_t *dst_image, uint8_t *src_image)
         }
     }
 }
-
+#endif
 
 /**
 * @brief  Read BMP
@@ -310,6 +314,7 @@ static void DrawActiveZone(uint8_t *img, uint16_t horz_pos, uint16_t vert_pos, u
 }
 
 
+#if 0  
 
 /**
 * @brief  Mems gyroscope Demo application.
@@ -344,7 +349,6 @@ static void Demo_MEMS(void)
 	
 	LCD_Refresh_BMP();
 
-#if 0  
   if ( Xval>Yval)
   {
     if ((int16_t)Buffer[0] > 40)
@@ -387,35 +391,43 @@ static void Demo_MEMS(void)
       Delay(50);
     } 
   } 
-#endif	
-	
+
 }
+
+#endif	
+
 
 /**
 * @brief  Configure the Mems to gyroscope application.
 * @param  None
-* @retval None
+* @retval 0 if L3GD20 sensor found
 */
-static void Demo_GyroConfig(void)
+static uint8_t Demo_GyroConfig(void)
 {
-  L3GD20_InitTypeDef L3GD20_InitStructure;
-  L3GD20_FilterConfigTypeDef L3GD20_FilterStructure;
+    L3GD20_InitTypeDef L3GD20_InitStructure;
+    L3GD20_FilterConfigTypeDef L3GD20_FilterStructure;
 
-  /* Configure Mems L3GD20 */
-  L3GD20_InitStructure.Power_Mode = L3GD20_MODE_ACTIVE;
-  L3GD20_InitStructure.Output_DataRate = L3GD20_OUTPUT_DATARATE_95HZ;
-  L3GD20_InitStructure.Axes_Enable = L3GD20_AXES_ENABLE;
-  L3GD20_InitStructure.Band_Width = L3GD20_ODR95_BANDWIDTH_25HZ;
-  L3GD20_InitStructure.BlockData_Update = L3GD20_BlockDataUpdate_Continous;
-  L3GD20_InitStructure.Endianness = L3GD20_BLE_LSB;
-  L3GD20_InitStructure.Full_Scale = L3GD20_FULLSCALE_500; 
-  L3GD20_Init(&L3GD20_InitStructure);
-  
-  L3GD20_FilterStructure.HighPassFilter_Mode_Selection =L3GD20_HPM_NORMAL_MODE_RES;
-  L3GD20_FilterStructure.HighPassFilter_CutOff_Frequency = L3GD20_HPFCF_ODR95_7d2HZ;
-  L3GD20_FilterConfig(&L3GD20_FilterStructure) ;
-  
-  L3GD20_FilterCmd(L3GD20_HIGHPASSFILTER_ENABLE);
+    /* Configure Mems L3GD20 */
+    L3GD20_InitStructure.Power_Mode = L3GD20_MODE_ACTIVE;
+    L3GD20_InitStructure.Output_DataRate = L3GD20_OUTPUT_DATARATE_95HZ;
+    L3GD20_InitStructure.Axes_Enable = L3GD20_AXES_ENABLE;
+    L3GD20_InitStructure.Band_Width = L3GD20_ODR95_BANDWIDTH_25HZ;
+    L3GD20_InitStructure.BlockData_Update = L3GD20_BlockDataUpdate_Continous;
+    L3GD20_InitStructure.Endianness = L3GD20_BLE_LSB;
+    L3GD20_InitStructure.Full_Scale = L3GD20_FULLSCALE_250; 
+    L3GD20_Init(&L3GD20_InitStructure);
+    
+    // set up HP filter
+    L3GD20_FilterStructure.HighPassFilter_Mode_Selection =L3GD20_HPM_NORMAL_MODE_RES;
+    L3GD20_FilterStructure.HighPassFilter_CutOff_Frequency = L3GD20_HPFCF_ODR95_7d2HZ;
+    L3GD20_FilterConfig(&L3GD20_FilterStructure);
+    L3GD20_FilterCmd(L3GD20_HIGHPASSFILTER_ENABLE);
+
+    /* Read WHOAMI register */
+    uint8_t tmpreg;
+    L3GD20_Read(&tmpreg, L3GD20_WHO_AM_I_ADDR, 1);
+    if (tmpreg == I_AM_L3GD20) return 0; else return 1;
+
 }
 
 /**
@@ -567,30 +579,38 @@ int main(void)
   
     /* Clear the Background Layer */ 
     LCD_Clear(LCD_COLOR_BLACK);
-	
-	/////
 	LCD_SetColors(LCD_COLOR_YELLOW, LCD_COLOR_BLACK);
-	LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)"LCD ready ***");
-    
+	
+   
     /* Gyroscope configuration */
-    Demo_GyroConfig();
-    
-    /* Gyroscope calibration */
-    Gyro_SimpleCalibration(Gyro);
-    
-    /* Enable INT1 interrupt */  
-    L3GD20_INT1InterruptCmd(ENABLE);
-    
-    /* Configure interrupts on all axes */
-    L3GD20_INT1InterruptConfig(L3GD20_AXES_INTERRUPT_ENABLE);
-    
-    if(EXTI_GetITStatus(EXTI_Line1) != RESET)
+    if (!Demo_GyroConfig())
     {
-        EXTI_ClearITPendingBit(EXTI_Line1);      
+        LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)"L3GD20 sensor Ok");
     }
     else
     {
-        STM_EVAL_LEDOn(LED4);      
+        LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)"Unknown sensor");
+    }
+    
+  
+    /* Gyroscope calibration */
+    Gyro_SimpleCalibration(Gyro);
+    
+    /* Disable all interrupts for a while */  
+    L3GD20_INT1InterruptCmd(DISABLE);
+    L3GD20_INT2InterruptCmd(DISABLE);
+    
+    // configure INT2/DRDY
+    L3GD20_INT2InterruptConfig();
+    
+    // clr (if any) pending line
+    if(EXTI_GetITStatus(L3GD20_SPI_INT2_EXTI_LINE) != RESET)
+    {
+        EXTI_ClearITPendingBit(L3GD20_SPI_INT2_EXTI_LINE);      
+    }
+    else
+    {
+        // STM_EVAL_LEDOn(LED4);      
     }
     
     /* Wait user button to be pressed */
@@ -599,9 +619,7 @@ int main(void)
     while(STM_EVAL_PBGetState(BUTTON_USER) != SET)
     {}
     
-    /* Disable INT1 interrupt */  
-    L3GD20_INT1InterruptCmd(DISABLE);  
-	
+       
 	LCD_Clear(LCD_COLOR_BLACK);
 	
     // BMP read
@@ -621,6 +639,13 @@ int main(void)
     InitActiveZone((uint8_t*)frame_cur, (uint8_t*)frame_bmp);
     
     float phi = 0.0;
+
+    /* Enable INT2/DRDY interrupt */  
+    L3GD20_INT2InterruptCmd(ENABLE);
+        
+    // rewind phi
+	phi_integrated = 0.0;
+
 
     while (1)
     {

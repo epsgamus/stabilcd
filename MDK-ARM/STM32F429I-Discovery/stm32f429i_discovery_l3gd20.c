@@ -82,6 +82,7 @@ __IO uint32_t  L3GD20Timeout = L3GD20_FLAG_TIMEOUT;
 static uint8_t L3GD20_SendByte(uint8_t byte);
 static void L3GD20_LowLevel_Init(void);
 static void L3GD20_EXTI_Config(void);
+static void L3GD20_INT2_EXTI_Config(void);
 /**
   * @}
   */
@@ -185,6 +186,23 @@ void L3GD20_INT1InterruptConfig(uint8_t Interrupt_Axes)
   L3GD20_Write(&regval[1], L3GD20_INT1_TSH_ZL_ADDR, 1);
   L3GD20_Write(&regval[2], L3GD20_INT1_DURATION_ADDR, 1);    
 }
+
+/**
+  * @brief Set L3GD20 INT2/DRDY configuration
+  * @param  
+  * @retval None
+  */
+void L3GD20_INT2InterruptConfig(void)
+{
+  uint8_t ctrl_cfr = 0x00;
+
+    /* Configure the INT2 line as EXTI source */
+  L3GD20_INT2_EXTI_Config();
+  
+  /* Set bypass FIFO mode */
+  L3GD20_Write(&ctrl_cfr, L3GD20_FIFO_CTRL_REG_ADDR, 1);
+}
+
 
 /**
   * @brief  Enable or disable INT1 interrupt
@@ -476,9 +494,11 @@ static void L3GD20_EXTI_Config(void)
   EXTI_InitTypeDef EXTI_InitStructure;
   
   /* Enable INT1 GPIO clock */
+  // PA1 pin
   RCC_AHB1PeriphClockCmd(L3GD20_SPI_INT1_GPIO_CLK, ENABLE);
   
   /* Enable INT2 GPIO clock */
+  // PA2 pin
   RCC_AHB1PeriphClockCmd(L3GD20_SPI_INT2_GPIO_CLK, ENABLE);
      
   /* Configure Interrupt INT1 pin  */
@@ -507,6 +527,43 @@ static void L3GD20_EXTI_Config(void)
   NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
   NVIC_Init(&NVIC_InitStructure); 
 }
+
+/**
+  * @brief  Configure the INT2/DRDY MEMS Interrupt line and GPIO in EXTI mode.
+  * @param  None        
+  * @retval None
+  */
+static void L3GD20_INT2_EXTI_Config(void)
+{ 
+  GPIO_InitTypeDef GPIO_InitStructure;
+  NVIC_InitTypeDef NVIC_InitStructure;
+  EXTI_InitTypeDef EXTI_InitStructure;
+  
+  /* Enable INT2 GPIO clock */
+  // PA2 pin
+  RCC_AHB1PeriphClockCmd(L3GD20_SPI_INT2_GPIO_CLK, ENABLE);
+     
+  /* Configure Interrupt INT2 pin  */  
+  GPIO_InitStructure.GPIO_Pin = L3GD20_SPI_INT2_PIN;
+  GPIO_Init(L3GD20_SPI_INT2_GPIO_PORT, &GPIO_InitStructure);
+  /* Connect Button EXTI Line to INT2 GPIO Pin */
+  SYSCFG_EXTILineConfig(L3GD20_SPI_INT2_EXTI_PORT_SOURCE, L3GD20_SPI_INT2_EXTI_PIN_SOURCE);  
+  
+  /* Configure INT2 EXTI line */
+  EXTI_InitStructure.EXTI_Line = L3GD20_SPI_INT2_EXTI_LINE;
+  EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+  EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;  
+  EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+  EXTI_Init(&EXTI_InitStructure);
+  
+  /* Enable and set INT2 EXTI Interrupt to the lowest priority */
+  NVIC_InitStructure.NVIC_IRQChannel = L3GD20_SPI_INT2_EXTI_IRQn;
+  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x0F;
+  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x0F;
+  NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+  NVIC_Init(&NVIC_InitStructure); 
+}
+
 
 #ifdef USE_DEFAULT_TIMEOUT_CALLBACK
 /**
