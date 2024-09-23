@@ -45,6 +45,7 @@
 uint8_t pBuffer;
 uint32_t systick_cnt = 0;
 extern uint8_t lcd_period_flag;
+extern uint8_t exti_int2_flag;
 extern float phi_integrated;
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
@@ -177,11 +178,12 @@ void SysTick_Handler(void)
 void EXTI1_IRQHandler(void)
 {
    uint8_t tmpbuffer[6];
+    
    if(EXTI_GetITStatus(L3GD20_SPI_INT2_EXTI_LINE) != RESET)
     {
         /*  LED3 On */   
-        //STM_EVAL_LEDOff(LED4);
-        //STM_EVAL_LEDOn(LED3);
+        STM_EVAL_LEDToggle(LED3);
+        exti_int2_flag = 1;
     }
     EXTI_ClearITPendingBit(L3GD20_SPI_INT2_EXTI_LINE);   
     //L3GD20_Read(&pBuffer, L3GD20_INT1_SRC_ADDR, 1);

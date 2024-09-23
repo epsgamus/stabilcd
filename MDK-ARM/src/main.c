@@ -49,6 +49,7 @@
 #endif	
     
 uint8_t lcd_period_flag = 0;
+uint8_t exti_int2_flag = 0;
 uint32_t frame_cnt = 0;
 
 /* Private variables ---------------------------------------------------------*/
@@ -423,10 +424,13 @@ static uint8_t Demo_GyroConfig(void)
     L3GD20_FilterConfig(&L3GD20_FilterStructure);
     L3GD20_FilterCmd(L3GD20_HIGHPASSFILTER_ENABLE);
 
+    // turn on FIFO
+    L3GD20_FIFOEnaCmd(ENABLE);
+    
     /* Read WHOAMI register */
     uint8_t tmpreg;
     L3GD20_Read(&tmpreg, L3GD20_WHO_AM_I_ADDR, 1);
-    if (tmpreg == I_AM_L3GD20) return 0; else return 1;
+    if (tmpreg == I_AM_L3GD20) return 0; else return tmpreg;
 
 }
 
@@ -561,6 +565,9 @@ int main(void)
     STM_EVAL_LEDInit(LED3);
     STM_EVAL_LEDInit(LED4);  
     STM_EVAL_PBInit(BUTTON_USER, BUTTON_MODE_GPIO); 
+
+    STM_EVAL_LEDOn(LED3);
+
   
     /* SysTick end of count event each 1 us */
     RCC_GetClocksFreq(&RCC_Clocks);
@@ -583,22 +590,26 @@ int main(void)
 	
    
     /* Gyroscope configuration */
-    if (!Demo_GyroConfig())
+    uint8_t str[20];
+    uint8_t id = Demo_GyroConfig();
+    if (!id)
     {
-        LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)"L3GD20 sensor Ok");
+        LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)"Sensor: L3GD20");
     }
     else
     {
-        LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)"Unknown sensor");
+        sprintf((char*)str, "Sensor ID=0x%X", id);
+        LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)str);
     }
-    
+
+   
   
     /* Gyroscope calibration */
     Gyro_SimpleCalibration(Gyro);
     
     /* Disable all interrupts for a while */  
     L3GD20_INT1InterruptCmd(DISABLE);
-    L3GD20_INT2InterruptCmd(DISABLE);
+    L3GD20_INT2InterruptCmd(ENABLE);
     
     // configure INT2/DRDY
     L3GD20_INT2InterruptConfig();
@@ -621,12 +632,14 @@ int main(void)
     
        
 	LCD_Clear(LCD_COLOR_BLACK);
+        
+    STM_EVAL_LEDOff(LED3);
+        
 	
     // BMP read
     uint32_t bmp_width, bmp_height;
     uint32_t bytes = ReadBMP(IMG_BMP_ADDR, (uint8_t*)frame_bmp, &bmp_width, &bmp_height);
 
-    uint8_t str[20];
     sprintf((char*)str, "BMP read Ok");
   	LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)str);
     sprintf((char*)str, "width=%d", bmp_width);
@@ -641,7 +654,7 @@ int main(void)
     float phi = 0.0;
 
     /* Enable INT2/DRDY interrupt */  
-    L3GD20_INT2InterruptCmd(ENABLE);
+    //L3GD20_INT2InterruptCmd(ENABLE);
         
     // rewind phi
 	phi_integrated = 0.0;
@@ -661,8 +674,19 @@ int main(void)
             DrawActiveZone((uint8_t*)frame_new, LCD_SIZE_PIXEL_WIDTH/2, LCD_SIZE_PIXEL_HEIGHT/2, BACKGR_COLOR);
 
             // tmply
+            int8_t temp = L3GD20_GetTemp();
+            uint8_t sts = L3GD20_GetDataStatus();
+            uint8_t fifo = L3GD20_GetFIFOStatus();
             sprintf((char*)str, "F=%04d", frame_cnt);
             LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)str);
+            sprintf((char*)str, "phi=%.2f", phi_integrated);
+            LCD_DisplayStringLine(LCD_LINE_1, (uint8_t*)str);
+            sprintf((char*)str, "temp=%d", temp);
+            LCD_DisplayStringLine(LCD_LINE_2, (uint8_t*)str);
+            sprintf((char*)str, "sts=0x%X", sts);
+            LCD_DisplayStringLine(LCD_LINE_3, (uint8_t*)str);
+            sprintf((char*)str, "fifo=0x%X", fifo);
+            LCD_DisplayStringLine(LCD_LINE_4, (uint8_t*)str);
 
     
             // integrate calc phi
@@ -676,6 +700,13 @@ int main(void)
 			if (frame_cnt == LCD_ILI9341_FPS_INT + 1) frame_cnt = 0;
 			lcd_period_flag = 0;
 		}
+        
+        /// tmply
+        if (exti_int2_flag)
+        {
+            __nop();
+            while (1) {};
+        }
     }
 }
 

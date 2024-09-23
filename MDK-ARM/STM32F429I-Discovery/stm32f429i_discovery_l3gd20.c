@@ -137,6 +137,36 @@ void L3GD20_RebootCmd(void)
   L3GD20_Write(&tmpreg, L3GD20_CTRL_REG5_ADDR, 1);
 }
 
+
+/**
+  * @brief  Read and cnv current TEMP L3GD20
+  * @param  None
+  * @retval None
+  */
+int8_t L3GD20_GetTemp(void)
+{
+    uint8_t tmpreg;
+  
+    /* Read CTRL_REG5 register */
+    L3GD20_Read(&tmpreg, L3GD20_OUT_TEMP_ADDR, 1);
+    
+    int8_t temp; 
+    
+    /*
+    if (tmpreg < 128) 
+    {
+        temp = (int8_t)tmpreg;
+    }
+    else
+    {
+        temp = (int8_t)(tmpreg - 256);
+    }
+    */
+       
+    return tmpreg;
+}
+
+
 /**
   * @brief Set L3GD20 Interrupt configuration
   * @param  Interrupt_Axes: Axe on which interrupt is activated 
@@ -194,7 +224,7 @@ void L3GD20_INT1InterruptConfig(uint8_t Interrupt_Axes)
   */
 void L3GD20_INT2InterruptConfig(void)
 {
-  uint8_t ctrl_cfr = 0x00;
+  uint8_t ctrl_cfr = L3GD20_FIFO_MODE_FIFO | L3GD20_FIFO_WM_LEVEL;
 
     /* Configure the INT2 line as EXTI source */
   L3GD20_INT2_EXTI_Config();
@@ -240,8 +270,8 @@ void L3GD20_INT2InterruptCmd(uint8_t InterruptState)
   /* Read CTRL_REG3 register */
   L3GD20_Read(&tmpreg, L3GD20_CTRL_REG3_ADDR, 1);
                   
-  tmpreg &= 0xF7;	
-  tmpreg |= InterruptState;
+  tmpreg &= 0xF3;	
+  tmpreg |= (InterruptState << 2) | (InterruptState << 3);
   
   /* Write value to MEMS CTRL_REG3 regsister */
   L3GD20_Write(&tmpreg, L3GD20_CTRL_REG3_ADDR, 1);
@@ -294,6 +324,31 @@ void L3GD20_FilterCmd(uint8_t HighPassFilterState)
 }
 
 /**
+  * @brief  Enable or Disable FIFO
+  * @param  HighPassFilterState: new state of the High Pass Filter feature.
+  *      This parameter can be: 
+  *         @arg: DISABLE 
+  *         @arg: ENABLE          
+  * @retval None
+  */
+void L3GD20_FIFOEnaCmd(uint8_t FIFOState)
+ {
+  uint8_t tmpreg;
+  
+  /* Read CTRL_REG5 register */
+  L3GD20_Read(&tmpreg, L3GD20_CTRL_REG5_ADDR, 1);
+                  
+  tmpreg &= 0xBF;
+
+  tmpreg |= (FIFOState << 6);
+
+  /* Write value to MEMS CTRL_REG5 regsister */
+  L3GD20_Write(&tmpreg, L3GD20_CTRL_REG5_ADDR, 1);
+}
+
+
+
+/**
   * @brief  Get status for L3GD20 data
   * @param  None         
   * @retval L3GD20 status
@@ -304,6 +359,21 @@ uint8_t L3GD20_GetDataStatus(void)
   
   /* Read STATUS_REG register */
   L3GD20_Read(&tmpreg, L3GD20_STATUS_REG_ADDR, 1);
+                  
+  return tmpreg;
+}
+
+/**
+  * @brief  Get FIFO status for L3GD20 data
+  * @param  None         
+  * @retval FIFO status
+  */
+uint8_t L3GD20_GetFIFOStatus(void)
+{
+  uint8_t tmpreg;
+  
+  /* Read STATUS_REG register */
+  L3GD20_Read(&tmpreg, L3GD20_FIFO_SRC_REG_ADDR, 1);
                   
   return tmpreg;
 }

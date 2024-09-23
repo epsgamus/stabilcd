@@ -126,6 +126,9 @@ typedef struct
 #define L3G_Sensitivity_500dps     (float)57.1429f        /*!< gyroscope sensitivity with 500 dps full scale [LSB/dps]  */
 #define L3G_Sensitivity_2000dps    (float)14.285f         /*!< gyroscope sensitivity with 2000 dps full scale [LSB/dps] */
 
+// FIFO depth used
+#define L3GD20_FIFO_WM_LEVEL    1
+
 
 /**
   * @brief  L3GD20 SPI Interface pins
@@ -406,6 +409,35 @@ typedef struct
   */
 
 
+/** @defgroup FIFO modes 
+  * @{
+  */   
+#define L3GD20_FIFO_MODE_POS        5
+#define L3GD20_FIFO_MODE_BYPASS         0 << L3GD20_FIFO_MODE_POS
+#define L3GD20_FIFO_MODE_FIFO           1 << L3GD20_FIFO_MODE_POS
+#define L3GD20_FIFO_MODE_STREAM         2 << L3GD20_FIFO_MODE_POS
+#define L3GD20_FIFO_MODE_STREAM2FIFO    3 << L3GD20_FIFO_MODE_POS
+#define L3GD20_FIFO_MODE_BYPASS2STREAM  4 << L3GD20_FIFO_MODE_POS
+/**
+  * @}
+  */
+
+/** @defgroup INT 
+  * @{
+  */   
+#define L3GD20_FIFO_MODE_POS        5
+#define L3GD20_FIFO_MODE_BYPASS         0 << L3GD20_FIFO_MODE_POS
+#define L3GD20_FIFO_MODE_FIFO           1 << L3GD20_FIFO_MODE_POS
+#define L3GD20_FIFO_MODE_STREAM         2 << L3GD20_FIFO_MODE_POS
+#define L3GD20_FIFO_MODE_STREAM2FIFO    3 << L3GD20_FIFO_MODE_POS
+#define L3GD20_FIFO_MODE_BYPASS2STREAM  4 << L3GD20_FIFO_MODE_POS
+/**
+  * @}
+  */
+
+
+
+
 /** @defgroup STM32F429I-DISCO_L3GD20_Exported_Macros
   * @{
   */
@@ -432,8 +464,11 @@ uint8_t L3GD20_GetDataStatus(void);
 /* High Pass Filter Configuration Functions */
 void L3GD20_FilterConfig(L3GD20_FilterConfigTypeDef *L3GD20_FilterStruct);
 void L3GD20_FilterCmd(uint8_t HighPassFilterState);
+void L3GD20_FIFOEnaCmd(uint8_t FIFOState);
 void L3GD20_Write(uint8_t* pBuffer, uint8_t WriteAddr, uint16_t NumByteToWrite);
 void L3GD20_Read(uint8_t* pBuffer, uint8_t ReadAddr, uint16_t NumByteToRead);
+int8_t L3GD20_GetTemp(void);
+uint8_t L3GD20_GetFIFOStatus(void);
 
 /* USER Callbacks: This is function for which prototype only is declared in
    MEMS accelerometre driver and that should be implemented into user applicaiton. */  
