@@ -670,11 +670,6 @@
               <FilePath>.\STM32F429I-Discovery\stm32f429i_discovery_ioe.c</FilePath>
             </File>
             <File>
-              <FileName>stm32f429i_discovery_l3gd20.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\STM32F429I-Discovery\stm32f429i_discovery_l3gd20.c</FilePath>
-            </File>
-            <File>
               <FileName>stm32f429i_discovery_lcd_upd.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\STM32F429I-Discovery\stm32f429i_discovery_lcd_upd.c</FilePath>
@@ -688,6 +683,11 @@
               <FileName>stm32f429i_discovery.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\STM32F429I-Discovery\stm32f429i_discovery.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f429i_discovery_i3g4250d.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\STM32F429I-Discovery\stm32f429i_discovery_i3g4250d.c</FilePath>
             </File>
           </Files>
         </Group>

@@ -1937,7 +1937,7 @@ void LCD_SPIConfig(void)
     /* SPI baudrate is set to 5.6 MHz (PCLK2/SPI_BaudRatePrescaler = 90/16 = 5.625 MHz) 
        to verify these constraints:
           - ILI9341 LCD SPI interface max baudrate is 10MHz for write and 6.66MHz for read
-          - l3gd20 SPI interface max baudrate is 10MHz for write/read
+          - I3G4250D SPI interface max baudrate is 10MHz for write/read
           - PCLK2 frequency is set to 90 MHz 
        */
     SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_16;
@@ -1945,7 +1945,7 @@ void LCD_SPIConfig(void)
     SPI_InitStructure.SPI_CRCPolynomial = 7;
     SPI_Init(LCD_SPI, &SPI_InitStructure);
 
-    /* Enable L3GD20_SPI  */
+    /* Enable I3G4250D_SPI  */
     SPI_Cmd(LCD_SPI, ENABLE);
   }
 }

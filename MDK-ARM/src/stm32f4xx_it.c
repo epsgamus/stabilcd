@@ -179,19 +179,19 @@ void EXTI1_IRQHandler(void)
 {
    uint8_t tmpbuffer[6];
     
-   if(EXTI_GetITStatus(L3GD20_SPI_INT2_EXTI_LINE) != RESET)
+   if(EXTI_GetITStatus(I3G4250D_SPI_INT2_EXTI_LINE) != RESET)
     {
         /*  LED3 On */   
         STM_EVAL_LEDToggle(LED3);
         exti_int2_flag = 1;
     }
-    EXTI_ClearITPendingBit(L3GD20_SPI_INT2_EXTI_LINE);   
-    //L3GD20_Read(&pBuffer, L3GD20_INT1_SRC_ADDR, 1);
+    EXTI_ClearITPendingBit(I3G4250D_SPI_INT2_EXTI_LINE);   
+    //I3G4250D_Read(&pBuffer, I3G4250D_INT1_SRC_ADDR, 1);
     
     // readout FIFO head
-    L3GD20_Read(tmpbuffer, L3GD20_OUT_X_L_ADDR, 6);
+    I3G4250D_Read(tmpbuffer, I3G4250D_OUT_X_L_ADDR, 6);
     // Z-axis in particular
-    float omega_z = (float) (((uint16_t)tmpbuffer[5] << 8) | (uint16_t)tmpbuffer[4]) / L3G_Sensitivity_250dps;
+    float omega_z = (float) (((uint16_t)tmpbuffer[5] << 8) | (uint16_t)tmpbuffer[4]) / L3G_Sensitivity_245dps;
     // integrate
     phi_integrated += omega_z*GYRO_ODR95_PERIOD_SEC;
 }

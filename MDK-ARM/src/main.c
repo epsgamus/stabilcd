@@ -4,7 +4,7 @@
   * @author  MCD Application Team
   * @version V1.0.1
   * @date    11-November-2013
-  * @brief   This example shows a simple test of how to use the MEMS sensor(L3GD20) 
+  * @brief   This example shows a simple test of how to use the MEMS sensor(I3G4250D) 
              mounted on the STM32F429I-DISCO board.
   ******************************************************************************
   * @attention
@@ -401,36 +401,36 @@ static void Demo_MEMS(void)
 /**
 * @brief  Configure the Mems to gyroscope application.
 * @param  None
-* @retval 0 if L3GD20 sensor found
+* @retval 0 if I3G4250D sensor found
 */
 static uint8_t Demo_GyroConfig(void)
 {
-    L3GD20_InitTypeDef L3GD20_InitStructure;
-    L3GD20_FilterConfigTypeDef L3GD20_FilterStructure;
+    I3G4250D_InitTypeDef I3G4250D_InitStructure;
+    I3G4250D_FilterConfigTypeDef I3G4250D_FilterStructure;
 
-    /* Configure Mems L3GD20 */
-    L3GD20_InitStructure.Power_Mode = L3GD20_MODE_ACTIVE;
-    L3GD20_InitStructure.Output_DataRate = L3GD20_OUTPUT_DATARATE_95HZ;
-    L3GD20_InitStructure.Axes_Enable = L3GD20_AXES_ENABLE;
-    L3GD20_InitStructure.Band_Width = L3GD20_ODR95_BANDWIDTH_25HZ;
-    L3GD20_InitStructure.BlockData_Update = L3GD20_BlockDataUpdate_Continous;
-    L3GD20_InitStructure.Endianness = L3GD20_BLE_LSB;
-    L3GD20_InitStructure.Full_Scale = L3GD20_FULLSCALE_250; 
-    L3GD20_Init(&L3GD20_InitStructure);
+    /* Configure Mems I3G4250D */
+    I3G4250D_InitStructure.Power_Mode = I3G4250D_MODE_ACTIVE;
+    I3G4250D_InitStructure.Output_DataRate = I3G4250D_OUTPUT_DATARATE_105HZ;
+    I3G4250D_InitStructure.Axes_Enable = I3G4250D_AXES_ENABLE;
+    I3G4250D_InitStructure.Band_Width = I3G4250D_ODR105_BANDWIDTH_25HZ;
+    I3G4250D_InitStructure.BlockData_Update = I3G4250D_BlockDataUpdate_Continous;
+    I3G4250D_InitStructure.Endianness = I3G4250D_BLE_LSB;
+    I3G4250D_InitStructure.Full_Scale = I3G4250D_FULLSCALE_245; 
+    I3G4250D_Init(&I3G4250D_InitStructure);
     
     // set up HP filter
-    L3GD20_FilterStructure.HighPassFilter_Mode_Selection =L3GD20_HPM_NORMAL_MODE_RES;
-    L3GD20_FilterStructure.HighPassFilter_CutOff_Frequency = L3GD20_HPFCF_ODR95_7d2HZ;
-    L3GD20_FilterConfig(&L3GD20_FilterStructure);
-    L3GD20_FilterCmd(L3GD20_HIGHPASSFILTER_ENABLE);
+    I3G4250D_FilterStructure.HighPassFilter_Mode_Selection =I3G4250D_HPM_NORMAL_MODE_RES;
+    I3G4250D_FilterStructure.HighPassFilter_CutOff_Frequency = I3G4250D_HPFCF_ODR105_8HZ;
+    I3G4250D_FilterConfig(&I3G4250D_FilterStructure);
+    I3G4250D_FilterCmd(I3G4250D_HIGHPASSFILTER_ENABLE);
 
     // turn on FIFO
-    L3GD20_FIFOEnaCmd(ENABLE);
+    I3G4250D_FIFOEnaCmd(ENABLE);
     
     /* Read WHOAMI register */
     uint8_t tmpreg;
-    L3GD20_Read(&tmpreg, L3GD20_WHO_AM_I_ADDR, 1);
-    if (tmpreg == I_AM_L3GD20) return 0; else return tmpreg;
+    I3G4250D_Read(&tmpreg, I3G4250D_WHO_AM_I_ADDR, 1);
+    if (tmpreg == I_AM_I3G4250D) return 0; else return tmpreg;
 
 }
 
@@ -447,9 +447,9 @@ static void Demo_GyroReadAngRate (float* pfData)
   float sensitivity = 0;
   int i =0;
   
-  L3GD20_Read(&tmpreg,L3GD20_CTRL_REG4_ADDR,1);
+  I3G4250D_Read(&tmpreg,I3G4250D_CTRL_REG4_ADDR,1);
   
-  L3GD20_Read(tmpbuffer,L3GD20_OUT_X_L_ADDR,6);
+  I3G4250D_Read(tmpbuffer,I3G4250D_OUT_X_L_ADDR,6);
   
   /* check in the control register 4 the data alignment (Big Endian or Little Endian)*/
   if(!(tmpreg & 0x40))
@@ -471,7 +471,7 @@ static void Demo_GyroReadAngRate (float* pfData)
   switch(tmpreg & 0x30)
   {
   case 0x00:
-    sensitivity=L3G_Sensitivity_250dps;
+    sensitivity=L3G_Sensitivity_245dps;
     break;
     
   case 0x10:
@@ -523,7 +523,7 @@ static void Gyro_SimpleCalibration(float* GyroData)
 * @param  None.
 * @retval None.
 */
-uint32_t L3GD20_TIMEOUT_UserCallback(void)
+uint32_t I3G4250D_TIMEOUT_UserCallback(void)
 {
   return 0;
 }
@@ -594,7 +594,7 @@ int main(void)
     uint8_t id = Demo_GyroConfig();
     if (!id)
     {
-        LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)"Sensor: L3GD20");
+        LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)"Sensor:I3G4250D");
     }
     else
     {
@@ -608,16 +608,16 @@ int main(void)
     Gyro_SimpleCalibration(Gyro);
     
     /* Disable all interrupts for a while */  
-    L3GD20_INT1InterruptCmd(DISABLE);
-    L3GD20_INT2InterruptCmd(ENABLE);
+    I3G4250D_INT1InterruptCmd(DISABLE);
+    I3G4250D_INT2InterruptCmd(ENABLE);
     
     // configure INT2/DRDY
-    L3GD20_INT2InterruptConfig();
+    I3G4250D_INT2InterruptConfig();
     
     // clr (if any) pending line
-    if(EXTI_GetITStatus(L3GD20_SPI_INT2_EXTI_LINE) != RESET)
+    if(EXTI_GetITStatus(I3G4250D_SPI_INT2_EXTI_LINE) != RESET)
     {
-        EXTI_ClearITPendingBit(L3GD20_SPI_INT2_EXTI_LINE);      
+        EXTI_ClearITPendingBit(I3G4250D_SPI_INT2_EXTI_LINE);      
     }
     else
     {
@@ -654,7 +654,7 @@ int main(void)
     float phi = 0.0;
 
     /* Enable INT2/DRDY interrupt */  
-    //L3GD20_INT2InterruptCmd(ENABLE);
+    //I3G4250D_INT2InterruptCmd(ENABLE);
         
     // rewind phi
 	phi_integrated = 0.0;
@@ -674,9 +674,9 @@ int main(void)
             DrawActiveZone((uint8_t*)frame_new, LCD_SIZE_PIXEL_WIDTH/2, LCD_SIZE_PIXEL_HEIGHT/2, BACKGR_COLOR);
 
             // tmply
-            int8_t temp = L3GD20_GetTemp();
-            uint8_t sts = L3GD20_GetDataStatus();
-            uint8_t fifo = L3GD20_GetFIFOStatus();
+            int8_t temp = I3G4250D_GetTemp();
+            uint8_t sts = I3G4250D_GetDataStatus();
+            uint8_t fifo = I3G4250D_GetFIFOStatus();
             sprintf((char*)str, "F=%04d", frame_cnt);
             LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)str);
             sprintf((char*)str, "phi=%.2f", phi_integrated);
