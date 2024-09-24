@@ -175,7 +175,7 @@ void SysTick_Handler(void)
   * @param  None
   * @retval None
   */
-void EXTI1_IRQHandler(void)
+void EXTI2_IRQHandler(void)
 {
    uint8_t tmpbuffer[6];
     
@@ -190,10 +190,18 @@ void EXTI1_IRQHandler(void)
     
     // readout FIFO head
     I3G4250D_Read(tmpbuffer, I3G4250D_OUT_X_L_ADDR, 6);
+    
+    // to BYPASS
+    I3G4250D_SetFIFOMode_WMLevel(I3G4250D_FIFO_MODE_BYPASS, I3G4250D_FIFO_WM_LEVEL);
+    
     // Z-axis in particular
     float omega_z = (float) (((uint16_t)tmpbuffer[5] << 8) | (uint16_t)tmpbuffer[4]) / L3G_Sensitivity_245dps;
     // integrate
     phi_integrated += omega_z*GYRO_ODR95_PERIOD_SEC;
+    
+    // to FIFO
+    I3G4250D_SetFIFOMode_WMLevel(I3G4250D_FIFO_MODE_FIFO, I3G4250D_FIFO_WM_LEVEL);
+    
 }
 
 

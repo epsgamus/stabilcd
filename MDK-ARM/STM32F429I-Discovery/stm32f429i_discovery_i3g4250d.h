@@ -403,6 +403,34 @@ typedef struct
   * @}
   */
 
+/** @defgroup CTRL3
+  * @{
+  */   
+#define I3G4250D_CTRL3_I1_INT       1 << 7
+#define I3G4250D_CTRL3_I1_BOOT      1 << 6
+#define I3G4250D_CTRL3_H_LACTIVE    1 << 5
+#define I3G4250D_CTRL3_PP_OD        1 << 4
+#define I3G4250D_CTRL3_I2_DRDY      1 << 3
+#define I3G4250D_CTRL3_I2_WTM       1 << 2
+#define I3G4250D_CTRL3_I2_OVR       1 << 1
+#define I3G4250D_CTRL3_I2_EMPTY     1 << 0
+/**
+  * @}
+  */
+
+/** @defgroup CTRL5
+  * @{
+  */   
+#define I3G4250D_CTRL5_BOOT           1 << 7
+#define I3G4250D_CTRL5_FIFO_ENA       1 << 6
+#define I3G4250D_CTRL5_HPF_ENA        1 << 4
+#define I3G4250D_CTRL3_INT1_SEL1      1 << 3
+#define I3G4250D_CTRL3_INT1_SEL0      1 << 2
+#define I3G4250D_CTRL3_OUT_SEL1       1 << 1
+#define I3G4250D_CTRL3_OUT_SEL0       1 << 0
+/**
+  * @}
+  */
 
 
 
@@ -420,7 +448,7 @@ typedef struct
   * @{
   */
 /* Sensor Configuration Functions */ 
-void I3G4250D_Init(I3G4250D_InitTypeDef *I3G4250D_InitStruct);
+void I3G4250D_Init(void);
 void I3G4250D_RebootCmd(void);
 
 /*INT1 Interrupt Configuration Functions */
@@ -438,6 +466,8 @@ void I3G4250D_Write(uint8_t* pBuffer, uint8_t WriteAddr, uint16_t NumByteToWrite
 void I3G4250D_Read(uint8_t* pBuffer, uint8_t ReadAddr, uint16_t NumByteToRead);
 int8_t I3G4250D_GetTemp(void);
 uint8_t I3G4250D_GetFIFOStatus(void);
+void I3G4250D_SetFIFOMode_WMLevel(uint8_t mode, uint8_t wmlevel);
+
 
 /* USER Callbacks: This is function for which prototype only is declared in
    MEMS accelerometre driver and that should be implemented into user applicaiton. */  

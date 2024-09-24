@@ -395,7 +395,7 @@ static void Demo_MEMS(void)
 
 }
 
-#endif	
+	
 
 
 /**
@@ -408,7 +408,15 @@ static uint8_t Demo_GyroConfig(void)
     I3G4250D_InitTypeDef I3G4250D_InitStructure;
     I3G4250D_FilterConfigTypeDef I3G4250D_FilterStructure;
 
-    /* Configure Mems I3G4250D */
+    // CTRL2: set up HP filter
+    I3G4250D_FilterStructure.HighPassFilter_Mode_Selection =I3G4250D_HPM_NORMAL_MODE_RES;
+    I3G4250D_FilterStructure.HighPassFilter_CutOff_Frequency = I3G4250D_HPFCF_ODR105_8HZ;
+    I3G4250D_FilterConfig(&I3G4250D_FilterStructure);
+
+    // CTRL3: ints DRDY
+    I3G4250D_INT2InterruptCmd(ENABLE);
+
+       // 
     I3G4250D_InitStructure.Power_Mode = I3G4250D_MODE_ACTIVE;
     I3G4250D_InitStructure.Output_DataRate = I3G4250D_OUTPUT_DATARATE_105HZ;
     I3G4250D_InitStructure.Axes_Enable = I3G4250D_AXES_ENABLE;
@@ -418,10 +426,7 @@ static uint8_t Demo_GyroConfig(void)
     I3G4250D_InitStructure.Full_Scale = I3G4250D_FULLSCALE_245; 
     I3G4250D_Init(&I3G4250D_InitStructure);
     
-    // set up HP filter
-    I3G4250D_FilterStructure.HighPassFilter_Mode_Selection =I3G4250D_HPM_NORMAL_MODE_RES;
-    I3G4250D_FilterStructure.HighPassFilter_CutOff_Frequency = I3G4250D_HPFCF_ODR105_8HZ;
-    I3G4250D_FilterConfig(&I3G4250D_FilterStructure);
+    // CTRL5: 
     I3G4250D_FilterCmd(I3G4250D_HIGHPASSFILTER_ENABLE);
 
     // turn on FIFO
@@ -434,6 +439,7 @@ static uint8_t Demo_GyroConfig(void)
 
 }
 
+#endif
 /**
 * @brief  Calculate the angular Data rate Gyroscope.
 * @param  pfData : Data out pointer
@@ -588,11 +594,29 @@ int main(void)
     LCD_Clear(LCD_COLOR_BLACK);
 	LCD_SetColors(LCD_COLOR_YELLOW, LCD_COLOR_BLACK);
 	
+    uint8_t str[20];
+    
+        // tmply
+    uint8_t sts = I3G4250D_GetDataStatus();
+    uint8_t fifo = I3G4250D_GetFIFOStatus();
+    sprintf((char*)str, "sts=0x%X", sts);
+    LCD_DisplayStringLine(LCD_LINE_3, (uint8_t*)str);
+    sprintf((char*)str, "fifo=0x%X", fifo);
+    LCD_DisplayStringLine(LCD_LINE_4, (uint8_t*)str);
+    
+   
+    // > 10 ms since poweron
+    Delay(100000);
    
     /* Gyroscope configuration */
-    uint8_t str[20];
-    uint8_t id = Demo_GyroConfig();
-    if (!id)
+    I3G4250D_Init();
+
+    // > 250 ms since poweron
+    Delay(500000);    
+    
+    uint8_t id;
+    I3G4250D_Read(&id, I3G4250D_WHO_AM_I_ADDR, 1);
+    if (id == I_AM_I3G4250D)
     {
         LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)"Sensor:I3G4250D");
     }
@@ -602,17 +626,40 @@ int main(void)
         LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)str);
     }
 
+        // tmply
+    sts = I3G4250D_GetDataStatus();
+    fifo = I3G4250D_GetFIFOStatus();
+    sprintf((char*)str, "sts=0x%X", sts);
+    LCD_DisplayStringLine(LCD_LINE_3, (uint8_t*)str);
+    sprintf((char*)str, "fifo=0x%X", fifo);
+    LCD_DisplayStringLine(LCD_LINE_4, (uint8_t*)str);
+
    
   
     /* Gyroscope calibration */
-    Gyro_SimpleCalibration(Gyro);
+    //Gyro_SimpleCalibration(Gyro);
     
     /* Disable all interrupts for a while */  
-    I3G4250D_INT1InterruptCmd(DISABLE);
-    I3G4250D_INT2InterruptCmd(ENABLE);
+    //I3G4250D_INT1InterruptCmd(DISABLE);
+    //I3G4250D_INT2InterruptCmd(ENABLE);
     
     // configure INT2/DRDY
-    I3G4250D_INT2InterruptConfig();
+    //I3G4250D_INT2InterruptConfig();
+    
+    
+    
+    
+    
+    
+    /* Wait user button to be pressed */
+    while(STM_EVAL_PBGetState(BUTTON_USER) != RESET)
+    {}
+    while(STM_EVAL_PBGetState(BUTTON_USER) != SET)
+    {}
+
+
+    // to FIFO
+    I3G4250D_SetFIFOMode_WMLevel(I3G4250D_FIFO_MODE_FIFO, I3G4250D_FIFO_WM_LEVEL);
     
     // clr (if any) pending line
     if(EXTI_GetITStatus(I3G4250D_SPI_INT2_EXTI_LINE) != RESET)
@@ -623,19 +670,14 @@ int main(void)
     {
         // STM_EVAL_LEDOn(LED4);      
     }
-    
-    /* Wait user button to be pressed */
-    while(STM_EVAL_PBGetState(BUTTON_USER) != RESET)
-    {}
-    while(STM_EVAL_PBGetState(BUTTON_USER) != SET)
-    {}
-    
+
+        
        
 	LCD_Clear(LCD_COLOR_BLACK);
         
     STM_EVAL_LEDOff(LED3);
         
-	
+	/*
     // BMP read
     uint32_t bmp_width, bmp_height;
     uint32_t bytes = ReadBMP(IMG_BMP_ADDR, (uint8_t*)frame_bmp, &bmp_width, &bmp_height);
@@ -650,6 +692,7 @@ int main(void)
     Delay(500000);
 
     InitActiveZone((uint8_t*)frame_cur, (uint8_t*)frame_bmp);
+    */
     
     float phi = 0.0;
 
@@ -668,10 +711,10 @@ int main(void)
             //Demo_MEMS();	
 
             // rotate
-            RotateActiveZone((uint8_t*)frame_new, (uint8_t*)frame_cur, phi, BACKGR_COLOR);
+            //RotateActiveZone((uint8_t*)frame_new, (uint8_t*)frame_cur, phi, BACKGR_COLOR);
 
             // redraw
-            DrawActiveZone((uint8_t*)frame_new, LCD_SIZE_PIXEL_WIDTH/2, LCD_SIZE_PIXEL_HEIGHT/2, BACKGR_COLOR);
+            //DrawActiveZone((uint8_t*)frame_new, LCD_SIZE_PIXEL_WIDTH/2, LCD_SIZE_PIXEL_HEIGHT/2, BACKGR_COLOR);
 
             // tmply
             int8_t temp = I3G4250D_GetTemp();

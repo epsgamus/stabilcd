@@ -78,25 +78,37 @@ static void I3G4250D_INT2_EXTI_Config(void);
   *         that contains the configuration setting for the I3G4250D.
   * @retval None
   */
-void I3G4250D_Init(I3G4250D_InitTypeDef *I3G4250D_InitStruct)
+void I3G4250D_Init(void)
 {  
-  uint8_t ctrl1 = 0x00, ctrl4 = 0x00;
+    uint8_t ctrl1 = 0x00, ctrl4 = 0x00, ctrl5 = 0x00;
   
-  /* Configure the low level interface ---------------------------------------*/
-  I3G4250D_LowLevel_Init();
+    /* Configure the low level interface ---------------------------------------*/
+    I3G4250D_LowLevel_Init();
+    
+    // CTRL2: set up HP filter
+    uint8_t tmpreg = 0;
+    I3G4250D_Read(&tmpreg, I3G4250D_CTRL_REG2_ADDR, 1);
+    tmpreg &= 0xC0;
+    tmpreg |= (uint8_t) (I3G4250D_HPM_NORMAL_MODE_RES | I3G4250D_HPFCF_ODR105_8HZ);                             
+    I3G4250D_Write(&tmpreg, I3G4250D_CTRL_REG2_ADDR, 1);
+    
+    // CTRL3: ints DRDY
+    I3G4250D_INT2InterruptCmd(ENABLE);
+    I3G4250D_INT2_EXTI_Config(); 
+    
+    // CLTR4:
+    ctrl4 |= (uint8_t) (I3G4250D_BLE_LSB | I3G4250D_FULLSCALE_245);
+    I3G4250D_Write(&ctrl4, I3G4250D_CTRL_REG4_ADDR, 1);
+    
+    // CTRL5: 
+    ctrl5 |= (uint8_t) (I3G4250D_CTRL5_FIFO_ENA | I3G4250D_CTRL5_HPF_ENA );
+    I3G4250D_Write(&ctrl5, I3G4250D_CTRL_REG5_ADDR, 1);
+    
+    // CTRL1: mode
+    ctrl1 |= (uint8_t) (I3G4250D_MODE_ACTIVE | I3G4250D_OUTPUT_DATARATE_105HZ | \
+        I3G4250D_AXES_ENABLE | I3G4250D_ODR105_BANDWIDTH_25HZ);
+    I3G4250D_Write(&ctrl1, I3G4250D_CTRL_REG1_ADDR, 1);
   
-  /* Configure MEMS: data rate, power mode, full scale and axes */
-  ctrl1 |= (uint8_t) (I3G4250D_InitStruct->Power_Mode | I3G4250D_InitStruct->Output_DataRate | \
-                    I3G4250D_InitStruct->Axes_Enable | I3G4250D_InitStruct->Band_Width);
-  
-  ctrl4 |= (uint8_t) (I3G4250D_InitStruct->BlockData_Update | I3G4250D_InitStruct->Endianness | \
-                    I3G4250D_InitStruct->Full_Scale);
-                    
-  /* Write value to MEMS CTRL_REG1 regsister */
-  I3G4250D_Write(&ctrl1, I3G4250D_CTRL_REG1_ADDR, 1);
-  
-  /* Write value to MEMS CTRL_REG4 regsister */
-  I3G4250D_Write(&ctrl4, I3G4250D_CTRL_REG4_ADDR, 1);
 }
 
 /**
@@ -131,7 +143,7 @@ int8_t I3G4250D_GetTemp(void)
     /* Read CTRL_REG5 register */
     I3G4250D_Read(&tmpreg, I3G4250D_OUT_TEMP_ADDR, 1);
     
-    int8_t temp; 
+//    int8_t temp; 
     
     /*
     if (tmpreg < 128) 
@@ -205,13 +217,21 @@ void I3G4250D_INT1InterruptConfig(uint8_t Interrupt_Axes)
   */
 void I3G4250D_INT2InterruptConfig(void)
 {
-  uint8_t ctrl_cfr = I3G4250D_FIFO_MODE_FIFO | I3G4250D_FIFO_WM_LEVEL;
-
     /* Configure the INT2 line as EXTI source */
   I3G4250D_INT2_EXTI_Config();
-  
-  /* Set bypass FIFO mode */
-  I3G4250D_Write(&ctrl_cfr, I3G4250D_FIFO_CTRL_REG_ADDR, 1);
+ 
+}
+
+
+/**
+  * @brief Set I3G4250D FIFO mode and WM level
+  * @param  
+  * @retval None
+  */
+void I3G4250D_SetFIFOMode_WMLevel(uint8_t mode, uint8_t wmlevel)
+{
+  uint8_t tmpreg = mode | wmlevel;
+  I3G4250D_Write(&tmpreg, I3G4250D_FIFO_CTRL_REG_ADDR, 1);
 }
 
 
@@ -251,8 +271,8 @@ void I3G4250D_INT2InterruptCmd(uint8_t InterruptState)
   /* Read CTRL_REG3 register */
   I3G4250D_Read(&tmpreg, I3G4250D_CTRL_REG3_ADDR, 1);
                   
-  tmpreg &= 0xF3;	
-  tmpreg |= (InterruptState << 2) | (InterruptState << 3);
+  tmpreg &= ~((uint8_t)I3G4250D_CTRL3_I2_DRDY | I3G4250D_CTRL3_I2_WTM);	
+  if (InterruptState) tmpreg |= (I3G4250D_CTRL3_I2_DRDY | I3G4250D_CTRL3_I2_WTM);
   
   /* Write value to MEMS CTRL_REG3 regsister */
   I3G4250D_Write(&tmpreg, I3G4250D_CTRL_REG3_ADDR, 1);
@@ -593,6 +613,12 @@ static void I3G4250D_INT2_EXTI_Config(void)
   /* Enable INT2 GPIO clock */
   // PA2 pin
   RCC_AHB1PeriphClockCmd(I3G4250D_SPI_INT2_GPIO_CLK, ENABLE);
+  
+  // EXTI clk
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_EXTIT, ENABLE);
+
+  // SYSCFG clk
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
      
   /* Configure Interrupt INT2 pin  */  
   GPIO_InitStructure.GPIO_Pin = I3G4250D_SPI_INT2_PIN;
@@ -609,7 +635,7 @@ static void I3G4250D_INT2_EXTI_Config(void)
   
   /* Enable and set INT2 EXTI Interrupt to the lowest priority */
   NVIC_InitStructure.NVIC_IRQChannel = I3G4250D_SPI_INT2_EXTI_IRQn;
-  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x0F;
+  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x04;
   NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x0F;
   NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
   NVIC_Init(&NVIC_InitStructure); 
