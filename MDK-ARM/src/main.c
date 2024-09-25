@@ -58,7 +58,12 @@ float Gyro[3];
 float X_BiasError, Y_BiasError, Z_BiasError = 0.0;
 uint8_t Xval, Yval = 0x00;
 
+// tmply
+#define CACHE_DEPTH     100
+float cache[CACHE_DEPTH];
+
 float phi_integrated = 0.0;
+float omega_z = 0.0;
 
 static __IO uint32_t TimingDelay;
 RCC_ClocksTypeDef RCC_Clocks;
@@ -572,7 +577,7 @@ int main(void)
     STM_EVAL_LEDInit(LED4);  
     STM_EVAL_PBInit(BUTTON_USER, BUTTON_MODE_GPIO); 
 
-    STM_EVAL_LEDOn(LED3);
+    STM_EVAL_LEDOff(LED3);
 
   
     /* SysTick end of count event each 1 us */
@@ -594,7 +599,8 @@ int main(void)
     LCD_Clear(LCD_COLOR_BLACK);
 	LCD_SetColors(LCD_COLOR_YELLOW, LCD_COLOR_BLACK);
 	
-    uint8_t str[20];
+    uint8_t str[15];
+    const uint8_t blank[15] = {' '};
     
         // tmply
     uint8_t sts = I3G4250D_GetDataStatus();
@@ -612,7 +618,7 @@ int main(void)
     I3G4250D_Init();
 
     // > 250 ms since poweron
-    Delay(500000);    
+    Delay(300000);    
     
     uint8_t id;
     I3G4250D_Read(&id, I3G4250D_WHO_AM_I_ADDR, 1);
@@ -657,25 +663,33 @@ int main(void)
     while(STM_EVAL_PBGetState(BUTTON_USER) != SET)
     {}
 
+        
+	LCD_Clear(LCD_COLOR_BLACK);
 
+        
+
+    // CTRL3: ints DRDY, WTM
+    I3G4250D_INT2_EXTI_Config(); 
+    I3G4250D_INT2InterruptCmd(ENABLE);
+        
     // to FIFO
+    I3G4250D_Write((uint8_t*)(I3G4250D_CTRL5_FIFO_ENA), I3G4250D_CTRL_REG5_ADDR, 1);
     I3G4250D_SetFIFOMode_WMLevel(I3G4250D_FIFO_MODE_FIFO, I3G4250D_FIFO_WM_LEVEL);
-    
+
+     /*
     // clr (if any) pending line
     if(EXTI_GetITStatus(I3G4250D_SPI_INT2_EXTI_LINE) != RESET)
     {
         EXTI_ClearITPendingBit(I3G4250D_SPI_INT2_EXTI_LINE);      
     }
-    else
-    {
-        // STM_EVAL_LEDOn(LED4);      
-    }
+    */
 
         
+    // readout FIFO head
+    //uint8_t tmpbuffer[6];
+    //I3G4250D_Read(tmpbuffer, I3G4250D_OUT_X_L_ADDR, 6);
+    
        
-	LCD_Clear(LCD_COLOR_BLACK);
-        
-    STM_EVAL_LEDOff(LED3);
         
 	/*
     // BMP read
@@ -706,8 +720,11 @@ int main(void)
     while (1)
     {
         
+                
         if (lcd_period_flag)
         {
+            
+          
             //Demo_MEMS();	
 
             // rotate
@@ -717,19 +734,29 @@ int main(void)
             //DrawActiveZone((uint8_t*)frame_new, LCD_SIZE_PIXEL_WIDTH/2, LCD_SIZE_PIXEL_HEIGHT/2, BACKGR_COLOR);
 
             // tmply
-            int8_t temp = I3G4250D_GetTemp();
-            uint8_t sts = I3G4250D_GetDataStatus();
-            uint8_t fifo = I3G4250D_GetFIFOStatus();
+            //int8_t temp = I3G4250D_GetTemp();
+            //uint8_t sts = I3G4250D_GetDataStatus();
+            //uint8_t fifo = I3G4250D_GetFIFOStatus();
+            LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)blank);
+            LCD_DisplayStringLine(LCD_LINE_1, (uint8_t*)blank);
+            LCD_DisplayStringLine(LCD_LINE_2, (uint8_t*)blank);
+            
+            cache[frame_cnt] = omega_z;
+            
             sprintf((char*)str, "F=%04d", frame_cnt);
             LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)str);
-            sprintf((char*)str, "phi=%.2f", phi_integrated);
+            sprintf((char*)str, "omega=%5.2f", omega_z);
             LCD_DisplayStringLine(LCD_LINE_1, (uint8_t*)str);
-            sprintf((char*)str, "temp=%d", temp);
+            sprintf((char*)str, "phi=%5.2f", phi_integrated);
             LCD_DisplayStringLine(LCD_LINE_2, (uint8_t*)str);
+            /*
+            sprintf((char*)str, "temp=%d", temp);
+            LCD_DisplayStringLine(LCD_LINE_3, (uint8_t*)str);
             sprintf((char*)str, "sts=0x%X", sts);
             LCD_DisplayStringLine(LCD_LINE_3, (uint8_t*)str);
             sprintf((char*)str, "fifo=0x%X", fifo);
             LCD_DisplayStringLine(LCD_LINE_4, (uint8_t*)str);
+            */
 
     
             // integrate calc phi
@@ -740,15 +767,19 @@ int main(void)
             //ReassignActiveZone((uint8_t*)frame_cur, (uint8_t*)frame_new);
             
 			frame_cnt++;
-			if (frame_cnt == LCD_ILI9341_FPS_INT + 1) frame_cnt = 0;
+			if (frame_cnt == LCD_ILI9341_FPS_INT + 1) 
+            {
+                frame_cnt = 0;
+            }   
 			lcd_period_flag = 0;
 		}
         
-        /// tmply
         if (exti_int2_flag)
         {
-            __nop();
-            while (1) {};
+            exti_int2_flag = 0;
+            // to FIFO
+            I3G4250D_INT2InterruptCmd(ENABLE);
+            I3G4250D_SetFIFOMode_WMLevel(I3G4250D_FIFO_MODE_FIFO, I3G4250D_FIFO_WM_LEVEL);
         }
     }
 }

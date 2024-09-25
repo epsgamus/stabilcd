@@ -467,6 +467,7 @@ void I3G4250D_Read(uint8_t* pBuffer, uint8_t ReadAddr, uint16_t NumByteToRead);
 int8_t I3G4250D_GetTemp(void);
 uint8_t I3G4250D_GetFIFOStatus(void);
 void I3G4250D_SetFIFOMode_WMLevel(uint8_t mode, uint8_t wmlevel);
+void I3G4250D_INT2_EXTI_Config(void);
 
 
 /* USER Callbacks: This is function for which prototype only is declared in

@@ -47,6 +47,7 @@ uint32_t systick_cnt = 0;
 extern uint8_t lcd_period_flag;
 extern uint8_t exti_int2_flag;
 extern float phi_integrated;
+extern float omega_z;
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 
@@ -167,7 +168,7 @@ void SysTick_Handler(void)
 /*  file (startup_stm32f429_439xx.s).                                               */
 /******************************************************************************/
 
-#define GYRO_ODR95_PERIOD_SEC		0.01052632F
+#define GYRO_ODR105_PERIOD_SEC		0.0095238095F
 
 
 /**
@@ -177,31 +178,31 @@ void SysTick_Handler(void)
   */
 void EXTI2_IRQHandler(void)
 {
-   uint8_t tmpbuffer[6];
+    I3G4250D_INT2InterruptCmd(DISABLE);
     
-   if(EXTI_GetITStatus(I3G4250D_SPI_INT2_EXTI_LINE) != RESET)
+    if(EXTI_GetITStatus(I3G4250D_SPI_INT2_EXTI_LINE) != RESET)
     {
-        /*  LED3 On */   
+        // tgl LED3
         STM_EVAL_LEDToggle(LED3);
+        EXTI_ClearITPendingBit(I3G4250D_SPI_INT2_EXTI_LINE);   
         exti_int2_flag = 1;
     }
-    EXTI_ClearITPendingBit(I3G4250D_SPI_INT2_EXTI_LINE);   
-    //I3G4250D_Read(&pBuffer, I3G4250D_INT1_SRC_ADDR, 1);
     
     // readout FIFO head
+    uint8_t tmpbuffer[6];
     I3G4250D_Read(tmpbuffer, I3G4250D_OUT_X_L_ADDR, 6);
     
-    // to BYPASS
+    //uint8_t sts = I3G4250D_GetDataStatus();
+  
+    // FIFO to BYPASS mode
     I3G4250D_SetFIFOMode_WMLevel(I3G4250D_FIFO_MODE_BYPASS, I3G4250D_FIFO_WM_LEVEL);
     
     // Z-axis in particular
-    float omega_z = (float) (((uint16_t)tmpbuffer[5] << 8) | (uint16_t)tmpbuffer[4]) / L3G_Sensitivity_245dps;
+    int16_t omega_raw = (int16_t)((uint16_t)tmpbuffer[5] << 8) | (uint16_t)tmpbuffer[4]; 
+    omega_z = (float)omega_raw/L3G_Sensitivity_245dps;
+    
     // integrate
-    phi_integrated += omega_z*GYRO_ODR95_PERIOD_SEC;
-    
-    // to FIFO
-    I3G4250D_SetFIFOMode_WMLevel(I3G4250D_FIFO_MODE_FIFO, I3G4250D_FIFO_WM_LEVEL);
-    
+    phi_integrated += omega_z*GYRO_ODR105_PERIOD_SEC;
 }
 
 
