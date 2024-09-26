@@ -94,42 +94,52 @@ static void delay(__IO uint32_t nCount)
   */
 void I3G4250D_Init(void)
 {  
-    uint8_t ctrl1 = 0x00, ctrl4 = 0x00, ctrl5 = 0x00;
-  
-    
-    /* Configure the low level interface ---------------------------------------*/
+    // SPI
     I3G4250D_LowLevel_Init();
 
-    // CTRL1: to POWERDOWN intentionally
-    ctrl1 = 0x00;
-    I3G4250D_Write(&ctrl1, I3G4250D_CTRL_REG1_ADDR, 1);  
-    I3G4250D_RebootCmd();
-    delay(100);
+    // reset device regs
+    // CTRL1
+    uint8_t ctrl1 = 0;
+    I3G4250D_Read(&ctrl1, I3G4250D_CTRL_REG1_ADDR, 1);
+    if (ctrl1 & I3G4250D_CTRL1_PD)
+    {
+        // if sensor already power on
+        // to POWERDOWN intentionally
+        uint8_t tmp = 0;
+        I3G4250D_Write(&tmp, I3G4250D_CTRL_REG1_ADDR, 1);  
+        while (ctrl1 & I3G4250D_CTRL1_PD)
+        {
+            // poll until PD is 0
+            I3G4250D_Read(&ctrl1, I3G4250D_CTRL_REG1_ADDR, 1);
+        }
+    }
+    // fifo and ints disable
+    I3G4250D_SetFIFOMode_WMLevel(I3G4250D_FIFO_MODE_BYPASS, I3G4250D_FIFO_WM_LEVEL);
+    I3G4250D_INT2InterruptCmd(DISABLE);
+    I3G4250D_FIFOEnaCmd(DISABLE);
      
     // CTRL2: set up HP filter
-    uint8_t tmpreg = 0;
-    I3G4250D_Read(&tmpreg, I3G4250D_CTRL_REG2_ADDR, 1);
-    tmpreg &= 0xC0;
-    tmpreg |= (uint8_t) (I3G4250D_HPM_NORMAL_MODE_RES | I3G4250D_HPFCF_ODR105_8HZ);                             
-    I3G4250D_Write(&tmpreg, I3G4250D_CTRL_REG2_ADDR, 1);
+    uint8_t cltr2 = 0;
+    I3G4250D_Read(&cltr2, I3G4250D_CTRL_REG2_ADDR, 1);
+    cltr2 &= 0xC0;
+    cltr2 |= (uint8_t) (I3G4250D_HPM_NORMAL_MODE_RES | I3G4250D_HPFCF_ODR105_8HZ);                             
+    I3G4250D_Write(&cltr2, I3G4250D_CTRL_REG2_ADDR, 1);
 
-  
     // CLTR4:
+    uint8_t ctrl4 = 0;
     ctrl4 |= (uint8_t) (I3G4250D_BLE_LSB | I3G4250D_FULLSCALE_245);
     I3G4250D_Write(&ctrl4, I3G4250D_CTRL_REG4_ADDR, 1);
     
     // CTRL5: 
-    //ctrl5 |= (uint8_t) (I3G4250D_CTRL5_FIFO_ENA | I3G4250D_CTRL5_HPF_ENA );
-    //ctrl5 |= (uint8_t) ( I3G4250D_CTRL5_HPF_ENA );
-    I3G4250D_Write((uint8_t*)( I3G4250D_CTRL5_HPF_ENA ), I3G4250D_CTRL_REG5_ADDR, 1);
-
+    uint8_t ctrl5 = 0;
+    ctrl5 |= I3G4250D_CTRL5_HPF_ENA;
+    I3G4250D_Write(&ctrl5, I3G4250D_CTRL_REG5_ADDR, 1);
 
     // CTRL1: mode ACTIVE
-    ctrl1 |= (uint8_t) (I3G4250D_MODE_ACTIVE | I3G4250D_OUTPUT_DATARATE_105HZ | \
+    ctrl1 = 0;
+    ctrl1 |= (uint8_t) (I3G4250D_CTRL1_PD | I3G4250D_OUTPUT_DATARATE_105HZ | \
         I3G4250D_AXES_ENABLE | I3G4250D_ODR105_BANDWIDTH_25HZ);
     I3G4250D_Write(&ctrl1, I3G4250D_CTRL_REG1_ADDR, 1);
-
-
 }
 
 /**
@@ -140,7 +150,8 @@ void I3G4250D_Init(void)
 void I3G4250D_RebootCmd(void)
 {
   /* Write value to MEMS CTRL_REG5 regsister */
-  I3G4250D_Write((uint8_t*)(I3G4250D_CTRL5_BOOT), I3G4250D_CTRL_REG5_ADDR, 1);
+    uint8_t tmpreg = I3G4250D_CTRL5_BOOT;
+    I3G4250D_Write(&tmpreg, I3G4250D_CTRL_REG5_ADDR, 1);
 }
 
 
@@ -291,6 +302,10 @@ void I3G4250D_INT2InterruptCmd(uint8_t InterruptState)
   I3G4250D_Write(&tmpreg, I3G4250D_CTRL_REG3_ADDR, 1);
 }
 
+
+
+
+
 /**
   * @brief  Set High Pass Filter Modality
   * @param  I3G4250D_FilterStruct: pointer to a I3G4250D_FilterConfigTypeDef structure 
@@ -349,14 +364,9 @@ void I3G4250D_FIFOEnaCmd(uint8_t FIFOState)
  {
   uint8_t tmpreg = 0;
   
-  /* Read CTRL_REG5 register */
   I3G4250D_Read(&tmpreg, I3G4250D_CTRL_REG5_ADDR, 1);
-                  
   tmpreg &= 0xBF;
-
   tmpreg |= (FIFOState << 6);
-
-  /* Write value to MEMS CTRL_REG5 regsister */
   I3G4250D_Write(&tmpreg, I3G4250D_CTRL_REG5_ADDR, 1);
 }
 
@@ -535,7 +545,6 @@ static void I3G4250D_LowLevel_Init(void)
 
   /* Deselect : Chip Select high */
   GPIO_SetBits(I3G4250D_SPI_CS_GPIO_PORT, I3G4250D_SPI_CS_PIN);
-
 }  
 
 /**

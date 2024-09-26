@@ -50,6 +50,7 @@
     
 uint8_t lcd_period_flag = 0;
 uint8_t exti_int2_flag = 0;
+uint8_t calib_flag = 0;
 uint32_t frame_cnt = 0;
 
 /* Private variables ---------------------------------------------------------*/
@@ -64,6 +65,7 @@ float cache[CACHE_DEPTH];
 
 float phi_integrated = 0.0;
 float omega_z = 0.0;
+
 
 static __IO uint32_t TimingDelay;
 RCC_ClocksTypeDef RCC_Clocks;
@@ -600,19 +602,12 @@ int main(void)
 	LCD_SetColors(LCD_COLOR_YELLOW, LCD_COLOR_BLACK);
 	
     uint8_t str[15];
-    const uint8_t blank[15] = {' '};
-    
-        // tmply
-    uint8_t sts = I3G4250D_GetDataStatus();
-    uint8_t fifo = I3G4250D_GetFIFOStatus();
-    sprintf((char*)str, "sts=0x%X", sts);
-    LCD_DisplayStringLine(LCD_LINE_3, (uint8_t*)str);
-    sprintf((char*)str, "fifo=0x%X", fifo);
-    LCD_DisplayStringLine(LCD_LINE_4, (uint8_t*)str);
+    const uint8_t blank[15] = "               ";
     
    
+   
     // > 10 ms since poweron
-    Delay(100000);
+    Delay(10000);
    
     /* Gyroscope configuration */
     I3G4250D_Init();
@@ -632,9 +627,9 @@ int main(void)
         LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)str);
     }
 
-        // tmply
-    sts = I3G4250D_GetDataStatus();
-    fifo = I3G4250D_GetFIFOStatus();
+    // tmply
+    uint8_t sts = I3G4250D_GetDataStatus();
+    uint8_t fifo = I3G4250D_GetFIFOStatus();
     sprintf((char*)str, "sts=0x%X", sts);
     LCD_DisplayStringLine(LCD_LINE_3, (uint8_t*)str);
     sprintf((char*)str, "fifo=0x%X", fifo);
@@ -667,28 +662,23 @@ int main(void)
 	LCD_Clear(LCD_COLOR_BLACK);
 
         
-
-    // CTRL3: ints DRDY, WTM
+    LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)"Calibration...");
+    calib_flag = 1;
+    Delay(1000000);            
+        
+    // ints and FIFO ena
     I3G4250D_INT2_EXTI_Config(); 
     I3G4250D_INT2InterruptCmd(ENABLE);
-        
-    // to FIFO
-    I3G4250D_Write((uint8_t*)(I3G4250D_CTRL5_FIFO_ENA), I3G4250D_CTRL_REG5_ADDR, 1);
+    I3G4250D_FIFOEnaCmd(ENABLE);
     I3G4250D_SetFIFOMode_WMLevel(I3G4250D_FIFO_MODE_FIFO, I3G4250D_FIFO_WM_LEVEL);
 
-     /*
     // clr (if any) pending line
     if(EXTI_GetITStatus(I3G4250D_SPI_INT2_EXTI_LINE) != RESET)
     {
         EXTI_ClearITPendingBit(I3G4250D_SPI_INT2_EXTI_LINE);      
     }
-    */
 
         
-    // readout FIFO head
-    //uint8_t tmpbuffer[6];
-    //I3G4250D_Read(tmpbuffer, I3G4250D_OUT_X_L_ADDR, 6);
-    
        
         
 	/*
@@ -710,9 +700,6 @@ int main(void)
     
     float phi = 0.0;
 
-    /* Enable INT2/DRDY interrupt */  
-    //I3G4250D_INT2InterruptCmd(ENABLE);
-        
     // rewind phi
 	phi_integrated = 0.0;
 
@@ -737,18 +724,22 @@ int main(void)
             //int8_t temp = I3G4250D_GetTemp();
             //uint8_t sts = I3G4250D_GetDataStatus();
             //uint8_t fifo = I3G4250D_GetFIFOStatus();
-            LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)blank);
+            if (!calib_flag)
+            {
+                LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)blank);
+            }
             LCD_DisplayStringLine(LCD_LINE_1, (uint8_t*)blank);
             LCD_DisplayStringLine(LCD_LINE_2, (uint8_t*)blank);
+            LCD_DisplayStringLine(LCD_LINE_3, (uint8_t*)blank);
             
             cache[frame_cnt] = omega_z;
             
             sprintf((char*)str, "F=%04d", frame_cnt);
-            LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)str);
-            sprintf((char*)str, "omega=%5.2f", omega_z);
             LCD_DisplayStringLine(LCD_LINE_1, (uint8_t*)str);
-            sprintf((char*)str, "phi=%5.2f", phi_integrated);
+            sprintf((char*)str, "omega=%.1f", omega_z);
             LCD_DisplayStringLine(LCD_LINE_2, (uint8_t*)str);
+            sprintf((char*)str, "phi=%.1f", phi_integrated);
+            LCD_DisplayStringLine(LCD_LINE_3, (uint8_t*)str);
             /*
             sprintf((char*)str, "temp=%d", temp);
             LCD_DisplayStringLine(LCD_LINE_3, (uint8_t*)str);
@@ -777,7 +768,7 @@ int main(void)
         if (exti_int2_flag)
         {
             exti_int2_flag = 0;
-            // to FIFO
+            // ena FIFO again
             I3G4250D_INT2InterruptCmd(ENABLE);
             I3G4250D_SetFIFOMode_WMLevel(I3G4250D_FIFO_MODE_FIFO, I3G4250D_FIFO_WM_LEVEL);
         }

@@ -106,8 +106,11 @@ typedef struct
 #define L3G_Sensitivity_500dps     (float)57.1429f        /*!< typical sensitivity 17.5 [mdps/lsb]  */
 #define L3G_Sensitivity_2000dps    (float)14.285f         /*!< typical sensitivity 70 [mdps/lsb] */
 
-// FIFO depth used
-#define I3G4250D_FIFO_WM_LEVEL    1
+// FIFO depth used, samples of ODR
+#define I3G4250D_FIFO_WM_LEVEL    3
+
+// calib samples
+#define I3G4250D_CALIB_SAMPLES      100
 
 
 /**
@@ -191,37 +194,6 @@ typedef struct
 
 #define I_AM_I3G4250D		    ((uint8_t)0xD3)
 
-/** @defgroup Power_Mode_selection 
-  * @{
-  */
-#define I3G4250D_MODE_POWERDOWN       ((uint8_t)0x00)
-#define I3G4250D_MODE_ACTIVE          ((uint8_t)0x08)
-/**
-  * @}
-  */
-
-/** @defgroup OutPut_DataRate_Selection 
-  * @{
-  */
-#define I3G4250D_OUTPUT_DATARATE_105HZ     ((uint8_t)0x00)
-#define I3G4250D_OUTPUT_DATARATE_208HZ    ((uint8_t)0x40)
-#define I3G4250D_OUTPUT_DATARATE_420HZ    ((uint8_t)0x80)
-#define I3G4250D_OUTPUT_DATARATE_840HZ    ((uint8_t)0xC0)
-/**
-  * @}
-  */
-
-/** @defgroup Axes_Selection 
-  * @{
-  */
-#define I3G4250D_X_ENABLE            ((uint8_t)0x02)
-#define I3G4250D_Y_ENABLE            ((uint8_t)0x01)
-#define I3G4250D_Z_ENABLE            ((uint8_t)0x04)
-#define I3G4250D_AXES_ENABLE         ((uint8_t)0x07)
-#define I3G4250D_AXES_DISABLE        ((uint8_t)0x00)
-/**
-  * @}
-  */
 
 /** @defgroup Axes_Interrupt_Selection 
   * @{
@@ -234,26 +206,6 @@ typedef struct
   * @}
   */
 
-/** @defgroup BandWidth_Selection 
-  * @{
-  */
-#define I3G4250D_ODR105_BANDWIDTH_12d5HZ       ((uint8_t)0x00)
-#define I3G4250D_ODR105_BANDWIDTH_25HZ         ((uint8_t)0x30)
-#define I3G4250D_ODR208_BANDWIDTH_12d5HZ       ((uint8_t)0x00)
-#define I3G4250D_ODR208_BANDWIDTH_25HZ         ((uint8_t)0x10)
-#define I3G4250D_ODR208_BANDWIDTH_50HZ         ((uint8_t)0x20)
-#define I3G4250D_ODR208_BANDWIDTH_70HZ         ((uint8_t)0x30)
-#define I3G4250D_ODR420_BANDWIDTH_20HZ         ((uint8_t)0x00)
-#define I3G4250D_ODR420_BANDWIDTH_25HZ         ((uint8_t)0x10)
-#define I3G4250D_ODR420_BANDWIDTH_50HZ         ((uint8_t)0x20)
-#define I3G4250D_ODR420_BANDWIDTH_110HZ        ((uint8_t)0x30)
-#define I3G4250D_ODR840_BANDWIDTH_30HZ         ((uint8_t)0x00)
-#define I3G4250D_ODR840_BANDWIDTH_35HZ         ((uint8_t)0x10)
-#define I3G4250D_ODR840_BANDWIDTH_50HZ         ((uint8_t)0x20)
-#define I3G4250D_ODR840_BANDWIDTH_110HZ        ((uint8_t)0x30)
-/**
-  * @}
-  */
 
 /** @defgroup Full_Scale_Selection 
   * @{
@@ -403,6 +355,66 @@ typedef struct
   * @}
   */
 
+
+
+
+
+
+/** @defgroup CTRL1 
+  * @{
+  */   
+#define I3G4250D_CTRL1_PD       1 << 3
+/**
+  * @}
+  */
+
+/** @defgroup CTRL1: OutPut_DataRate_Selection 
+  * @{
+  */
+#define I3G4250D_OUTPUT_DATARATE_105HZ     ((uint8_t)0x00)
+#define I3G4250D_OUTPUT_DATARATE_208HZ    ((uint8_t)0x40)
+#define I3G4250D_OUTPUT_DATARATE_420HZ    ((uint8_t)0x80)
+#define I3G4250D_OUTPUT_DATARATE_840HZ    ((uint8_t)0xC0)
+/**
+  * @}
+  */
+
+/** @defgroup CTRL1: Axes_Selection 
+  * @{
+  */
+#define I3G4250D_X_ENABLE            ((uint8_t)0x02)
+#define I3G4250D_Y_ENABLE            ((uint8_t)0x01)
+#define I3G4250D_Z_ENABLE            ((uint8_t)0x04)
+#define I3G4250D_AXES_ENABLE         ((uint8_t)0x07)
+#define I3G4250D_AXES_DISABLE        ((uint8_t)0x00)
+/**
+  * @}
+  */
+
+/** @defgroup CTRL1 BandWidth_Selection 
+  * @{
+  */
+#define I3G4250D_ODR105_BANDWIDTH_12d5HZ       ((uint8_t)0x00)
+#define I3G4250D_ODR105_BANDWIDTH_25HZ         ((uint8_t)0x30)
+#define I3G4250D_ODR208_BANDWIDTH_12d5HZ       ((uint8_t)0x00)
+#define I3G4250D_ODR208_BANDWIDTH_25HZ         ((uint8_t)0x10)
+#define I3G4250D_ODR208_BANDWIDTH_50HZ         ((uint8_t)0x20)
+#define I3G4250D_ODR208_BANDWIDTH_70HZ         ((uint8_t)0x30)
+#define I3G4250D_ODR420_BANDWIDTH_20HZ         ((uint8_t)0x00)
+#define I3G4250D_ODR420_BANDWIDTH_25HZ         ((uint8_t)0x10)
+#define I3G4250D_ODR420_BANDWIDTH_50HZ         ((uint8_t)0x20)
+#define I3G4250D_ODR420_BANDWIDTH_110HZ        ((uint8_t)0x30)
+#define I3G4250D_ODR840_BANDWIDTH_30HZ         ((uint8_t)0x00)
+#define I3G4250D_ODR840_BANDWIDTH_35HZ         ((uint8_t)0x10)
+#define I3G4250D_ODR840_BANDWIDTH_50HZ         ((uint8_t)0x20)
+#define I3G4250D_ODR840_BANDWIDTH_110HZ        ((uint8_t)0x30)
+/**
+  * @}
+  */
+
+
+
+
 /** @defgroup CTRL3
   * @{
   */   
@@ -468,7 +480,6 @@ int8_t I3G4250D_GetTemp(void);
 uint8_t I3G4250D_GetFIFOStatus(void);
 void I3G4250D_SetFIFOMode_WMLevel(uint8_t mode, uint8_t wmlevel);
 void I3G4250D_INT2_EXTI_Config(void);
-
 
 /* USER Callbacks: This is function for which prototype only is declared in
    MEMS accelerometre driver and that should be implemented into user applicaiton. */  

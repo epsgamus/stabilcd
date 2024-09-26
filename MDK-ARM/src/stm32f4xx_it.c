@@ -46,8 +46,15 @@ uint8_t pBuffer;
 uint32_t systick_cnt = 0;
 extern uint8_t lcd_period_flag;
 extern uint8_t exti_int2_flag;
+extern uint8_t calib_flag;
 extern float phi_integrated;
 extern float omega_z;
+
+float omega_z_bias = 0.0;
+float calib_sum = 0.0;
+uint8_t calib_cnt = 0;
+
+
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 
@@ -179,7 +186,6 @@ void SysTick_Handler(void)
 void EXTI2_IRQHandler(void)
 {
     I3G4250D_INT2InterruptCmd(DISABLE);
-    
     if(EXTI_GetITStatus(I3G4250D_SPI_INT2_EXTI_LINE) != RESET)
     {
         // tgl LED3
@@ -189,20 +195,43 @@ void EXTI2_IRQHandler(void)
     }
     
     // readout FIFO head
-    uint8_t tmpbuffer[6];
+    uint8_t tmpbuffer[6*I3G4250D_FIFO_WM_LEVEL];
     I3G4250D_Read(tmpbuffer, I3G4250D_OUT_X_L_ADDR, 6);
-    
-    //uint8_t sts = I3G4250D_GetDataStatus();
+    // read sts
+    uint8_t sts = I3G4250D_GetDataStatus();
   
     // FIFO to BYPASS mode
     I3G4250D_SetFIFOMode_WMLevel(I3G4250D_FIFO_MODE_BYPASS, I3G4250D_FIFO_WM_LEVEL);
     
     // Z-axis in particular
-    int16_t omega_raw = (int16_t)((uint16_t)tmpbuffer[5] << 8) | (uint16_t)tmpbuffer[4]; 
+    int32_t sum = 0;
+    for (uint8_t i=0; i<I3G4250D_FIFO_WM_LEVEL; i++)
+    {
+         int16_t tmp = (int16_t)(((uint16_t)tmpbuffer[5+6*i] << 8) | (uint16_t)tmpbuffer[4+6*i]);
+         sum += (int32_t)tmp;
+    }
+    int16_t omega_raw = (int16_t)(sum/I3G4250D_FIFO_WM_LEVEL); 
     omega_z = (float)omega_raw/L3G_Sensitivity_245dps;
     
-    // integrate
-    phi_integrated += omega_z*GYRO_ODR105_PERIOD_SEC;
+    /*
+    if ((calib_flag)&&(calib_cnt < I3G4250D_CALIB_SAMPLES))
+    {
+        calib_sum += omega_z;
+        calib_cnt++;
+    }
+    if (calib_cnt == I3G4250D_CALIB_SAMPLES)
+    {
+        // calc bias
+        //omega_z_bias = calib_sum/(float)I3G4250D_CALIB_SAMPLES;
+        calib_flag = 0; 
+    }
+    if (!calib_flag)
+    {
+        omega_z -= omega_z_bias;
+        // integrate
+        phi_integrated += omega_z*GYRO_ODR105_PERIOD_SEC*I3G4250D_FIFO_WM_LEVEL;
+    }
+    */
 }
 
 
