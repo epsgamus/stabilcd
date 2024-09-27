@@ -110,7 +110,10 @@ typedef struct
 #define I3G4250D_FIFO_WM_LEVEL    3
 
 // calib samples
-#define I3G4250D_CALIB_SAMPLES      100
+#define I3G4250D_CALIB_SAMPLES      500
+
+// mean/median filter of triples (todo)
+//#define I3G4250D_CALIB_PREFILTER_MEDIAN
 
 
 /**

@@ -130,9 +130,9 @@ void I3G4250D_Init(void)
     ctrl4 |= (uint8_t) (I3G4250D_BLE_LSB | I3G4250D_FULLSCALE_245);
     I3G4250D_Write(&ctrl4, I3G4250D_CTRL_REG4_ADDR, 1);
     
-    // CTRL5: 
+    // CTRL5: HP (and LP filters)
     uint8_t ctrl5 = 0;
-    ctrl5 |= I3G4250D_CTRL5_HPF_ENA;
+    ctrl5 |= (uint8_t) (I3G4250D_CTRL5_HPF_ENA /*| I3G4250D_CTRL3_OUT_SEL1*/);
     I3G4250D_Write(&ctrl5, I3G4250D_CTRL_REG5_ADDR, 1);
 
     // CTRL1: mode ACTIVE

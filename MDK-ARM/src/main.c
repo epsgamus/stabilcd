@@ -65,6 +65,7 @@ float cache[CACHE_DEPTH];
 
 float phi_integrated = 0.0;
 float omega_z = 0.0;
+extern float omega_z_bias;
 
 
 static __IO uint32_t TimingDelay;
@@ -731,6 +732,7 @@ int main(void)
             LCD_DisplayStringLine(LCD_LINE_1, (uint8_t*)blank);
             LCD_DisplayStringLine(LCD_LINE_2, (uint8_t*)blank);
             LCD_DisplayStringLine(LCD_LINE_3, (uint8_t*)blank);
+            LCD_DisplayStringLine(LCD_LINE_4, (uint8_t*)blank);
             
             cache[frame_cnt] = omega_z;
             
@@ -738,8 +740,10 @@ int main(void)
             LCD_DisplayStringLine(LCD_LINE_1, (uint8_t*)str);
             sprintf((char*)str, "omega=%.1f", omega_z);
             LCD_DisplayStringLine(LCD_LINE_2, (uint8_t*)str);
-            sprintf((char*)str, "phi=%.1f", phi_integrated);
+            sprintf((char*)str, "bias=%.1f", omega_z_bias);
             LCD_DisplayStringLine(LCD_LINE_3, (uint8_t*)str);
+            sprintf((char*)str, "phi=%.1f", phi_integrated);
+            LCD_DisplayStringLine(LCD_LINE_4, (uint8_t*)str);
             /*
             sprintf((char*)str, "temp=%d", temp);
             LCD_DisplayStringLine(LCD_LINE_3, (uint8_t*)str);
@@ -765,13 +769,16 @@ int main(void)
 			lcd_period_flag = 0;
 		}
         
-        if (exti_int2_flag)
+        
+        // 
+        /*
+        if (!exti_int2_flag && (calib_cnt == I3G4250D_CALIB_SAMPLES))
         {
-            exti_int2_flag = 0;
-            // ena FIFO again
-            I3G4250D_INT2InterruptCmd(ENABLE);
-            I3G4250D_SetFIFOMode_WMLevel(I3G4250D_FIFO_MODE_FIFO, I3G4250D_FIFO_WM_LEVEL);
+            // calc bias
+            omega_z_bias = calib_sum/(float)I3G4250D_CALIB_SAMPLES;
+            calib_flag = 0; 
         }
+        */
     }
 }
 

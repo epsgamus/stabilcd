@@ -41,7 +41,11 @@
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
+#define MAX(x,y)    (x < y) ? y : x
+#define MIN(x,y)    (x < y) ? x : y
+
 /* Private variables ---------------------------------------------------------*/
+
 uint8_t pBuffer;
 uint32_t systick_cnt = 0;
 extern uint8_t lcd_period_flag;
@@ -52,7 +56,7 @@ extern float omega_z;
 
 float omega_z_bias = 0.0;
 float calib_sum = 0.0;
-uint8_t calib_cnt = 0;
+uint32_t calib_cnt = 0;
 
 
 /* Private function prototypes -----------------------------------------------*/
@@ -200,38 +204,71 @@ void EXTI2_IRQHandler(void)
     // read sts
     uint8_t sts = I3G4250D_GetDataStatus();
   
-    // FIFO to BYPASS mode
+    // reset FIFO: to BYPASS mode
     I3G4250D_SetFIFOMode_WMLevel(I3G4250D_FIFO_MODE_BYPASS, I3G4250D_FIFO_WM_LEVEL);
+
+    int16_t omega_raw = 0;
     
-    // Z-axis in particular
+#ifdef  I3G4250D_CALIB_PREFILTER_MEDIAN    
+    // median
+    uint8_t max_idx = 255;
+    int16_t max = -32767;
+    int16_t tmp[I3G4250D_FIFO_WM_LEVEL];
+    for (uint8_t i=0; i<I3G4250D_FIFO_WM_LEVEL; i++)
+    {
+        tmp[i] = (int16_t)(((uint16_t)tmpbuffer[5+6*i] << 8) | (uint16_t)tmpbuffer[4+6*i]);
+        if (tmp[i] >= max)
+        {
+            max = tmp[i];
+            max_idx = i;
+        }
+    }
+    omega_raw = -32767;
+    for (uint8_t i=0; (i<I3G4250D_FIFO_WM_LEVEL)&&(i!=max_idx); i++)
+    {
+        if (tmp[i] >= omega_raw)
+        {
+            omega_raw = tmp[i];
+        }
+    }
+#else     
+    // mean
     int32_t sum = 0;
     for (uint8_t i=0; i<I3G4250D_FIFO_WM_LEVEL; i++)
     {
          int16_t tmp = (int16_t)(((uint16_t)tmpbuffer[5+6*i] << 8) | (uint16_t)tmpbuffer[4+6*i]);
          sum += (int32_t)tmp;
     }
-    int16_t omega_raw = (int16_t)(sum/I3G4250D_FIFO_WM_LEVEL); 
-    omega_z = (float)omega_raw/L3G_Sensitivity_245dps;
+    omega_raw = (int16_t)(sum/I3G4250D_FIFO_WM_LEVEL); 
+#endif    
     
-    /*
-    if ((calib_flag)&&(calib_cnt < I3G4250D_CALIB_SAMPLES))
-    {
-        calib_sum += omega_z;
-        calib_cnt++;
-    }
-    if (calib_cnt == I3G4250D_CALIB_SAMPLES)
+    omega_z = (float)omega_raw/L3G_Sensitivity_245dps - omega_z_bias;
+    
+    if (calib_cnt == I3G4250D_CALIB_SAMPLES) 
     {
         // calc bias
-        //omega_z_bias = calib_sum/(float)I3G4250D_CALIB_SAMPLES;
+        if (calib_flag) omega_z_bias = calib_sum/(float)I3G4250D_CALIB_SAMPLES;
+        // clr it
         calib_flag = 0; 
-    }
-    if (!calib_flag)
-    {
-        omega_z -= omega_z_bias;
         // integrate
-        phi_integrated += omega_z*GYRO_ODR105_PERIOD_SEC*I3G4250D_FIFO_WM_LEVEL;
+        phi_integrated += omega_z*GYRO_ODR105_PERIOD_SEC*I3G4250D_FIFO_WM_LEVEL;    
+        
     }
-    */
+    if (calib_flag)
+    {
+        if (calib_cnt < I3G4250D_CALIB_SAMPLES)
+        {
+            if (fabs(omega_z) <= 5.0) calib_sum += omega_z; else calib_sum += 5.0;
+            calib_cnt++;
+        }
+    }   
+    
+    
+    // reset FIFO: to FIFO mode again
+    I3G4250D_INT2InterruptCmd(ENABLE);
+    I3G4250D_SetFIFOMode_WMLevel(I3G4250D_FIFO_MODE_FIFO, I3G4250D_FIFO_WM_LEVEL);
+
+    exti_int2_flag = 0;
 }
 
 
