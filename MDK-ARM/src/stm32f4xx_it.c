@@ -41,8 +41,10 @@
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
+#define MACHEPS_FLOAT   1e-06
 #define MAX(x,y)    (x < y) ? y : x
 #define MIN(x,y)    (x < y) ? x : y
+
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -54,13 +56,28 @@ extern uint8_t calib_flag;
 extern float phi_integrated;
 extern float omega_z;
 
+extern uint8_t main_sts; 
+extern uint8_t fifo_sts; 
+
 float omega_z_bias = 0.0;
 float calib_sum = 0.0;
 uint32_t calib_cnt = 0;
 
+volatile float tmp_calib[I3G4250D_CALIB_SAMPLES];
+int16_t tmp_calib_int[I3G4250D_CALIB_SAMPLES];
+uint32_t tmp_cnt = 0;
+
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
+
+static float sgn(float x)
+{
+    if (x > MACHEPS_FLOAT) return 1.0F;
+    if (x < -MACHEPS_FLOAT) return -1.0F;
+}
+
+
 
 /******************************************************************************/
 /*            Cortex-M4 Processor Exceptions Handlers                         */
@@ -197,12 +214,27 @@ void EXTI2_IRQHandler(void)
         EXTI_ClearITPendingBit(I3G4250D_SPI_INT2_EXTI_LINE);   
         exti_int2_flag = 1;
     }
+   
+    // read sts
+    main_sts = I3G4250D_GetDataStatus();
+    fifo_sts = I3G4250D_GetFIFOStatus();
     
     // readout FIFO head
     uint8_t tmpbuffer[6*I3G4250D_FIFO_WM_LEVEL];
-    I3G4250D_Read(tmpbuffer, I3G4250D_OUT_X_L_ADDR, 6);
-    // read sts
-    uint8_t sts = I3G4250D_GetDataStatus();
+    for (uint8_t i=0; i<I3G4250D_FIFO_WM_LEVEL; i++)
+    {
+        // dummy read
+        uint8_t tmp;
+        I3G4250D_Read(&tmp, I3G4250D_OUT_X_L_ADDR, 1);
+        // read valuables
+        // Y
+        I3G4250D_Read(tmpbuffer + 6*i + 2, I3G4250D_OUT_Y_L_ADDR, 2);
+        // Z
+        I3G4250D_Read(tmpbuffer + 6*i + 4, I3G4250D_OUT_Z_L_ADDR, 2);
+        // Y
+        I3G4250D_Read(tmpbuffer + 6*i, I3G4250D_OUT_X_L_ADDR, 2);
+    }
+    
   
     // reset FIFO: to BYPASS mode
     I3G4250D_SetFIFOMode_WMLevel(I3G4250D_FIFO_MODE_BYPASS, I3G4250D_FIFO_WM_LEVEL);
@@ -236,8 +268,11 @@ void EXTI2_IRQHandler(void)
     int32_t sum = 0;
     for (uint8_t i=0; i<I3G4250D_FIFO_WM_LEVEL; i++)
     {
-         int16_t tmp = (int16_t)(((uint16_t)tmpbuffer[5+6*i] << 8) | (uint16_t)tmpbuffer[4+6*i]);
-         sum += (int32_t)tmp;
+        int16_t tmp = (int16_t)(((uint16_t)tmpbuffer[5+6*i] << 8) | (uint16_t)tmpbuffer[4+6*i]);
+        sum += (int32_t)tmp;
+        // tmply
+        if (tmp_cnt < I3G4250D_CALIB_SAMPLES) tmp_calib_int[tmp_cnt++] = tmp;
+         
     }
     omega_raw = (int16_t)(sum/I3G4250D_FIFO_WM_LEVEL); 
 #endif    
@@ -258,8 +293,12 @@ void EXTI2_IRQHandler(void)
     {
         if (calib_cnt < I3G4250D_CALIB_SAMPLES)
         {
-            if (fabs(omega_z) <= 5.0) calib_sum += omega_z; else calib_sum += 5.0;
+            //if (fabs(omega_z) <= 2.0) calib_sum += omega_z; else calib_sum += 2.0*sgn(omega_z);
+            calib_sum += omega_z;
+            // tmply store
+            tmp_calib[calib_cnt] = omega_z;
             calib_cnt++;
+           
         }
     }   
     

@@ -67,6 +67,8 @@ float phi_integrated = 0.0;
 float omega_z = 0.0;
 extern float omega_z_bias;
 
+volatile uint8_t main_sts; 
+volatile uint8_t fifo_sts; 
 
 static __IO uint32_t TimingDelay;
 RCC_ClocksTypeDef RCC_Clocks;
@@ -733,6 +735,8 @@ int main(void)
             LCD_DisplayStringLine(LCD_LINE_2, (uint8_t*)blank);
             LCD_DisplayStringLine(LCD_LINE_3, (uint8_t*)blank);
             LCD_DisplayStringLine(LCD_LINE_4, (uint8_t*)blank);
+            LCD_DisplayStringLine(LCD_LINE_5, (uint8_t*)blank);
+            LCD_DisplayStringLine(LCD_LINE_6, (uint8_t*)blank);
             
             cache[frame_cnt] = omega_z;
             
@@ -744,14 +748,12 @@ int main(void)
             LCD_DisplayStringLine(LCD_LINE_3, (uint8_t*)str);
             sprintf((char*)str, "phi=%.1f", phi_integrated);
             LCD_DisplayStringLine(LCD_LINE_4, (uint8_t*)str);
-            /*
-            sprintf((char*)str, "temp=%d", temp);
-            LCD_DisplayStringLine(LCD_LINE_3, (uint8_t*)str);
-            sprintf((char*)str, "sts=0x%X", sts);
-            LCD_DisplayStringLine(LCD_LINE_3, (uint8_t*)str);
-            sprintf((char*)str, "fifo=0x%X", fifo);
-            LCD_DisplayStringLine(LCD_LINE_4, (uint8_t*)str);
-            */
+            
+            sprintf((char*)str, "sts=0x%X", main_sts);
+            LCD_DisplayStringLine(LCD_LINE_5, (uint8_t*)str);
+            sprintf((char*)str, "fifo=0x%X", fifo_sts);
+            LCD_DisplayStringLine(LCD_LINE_6, (uint8_t*)str);
+            
 
     
             // integrate calc phi
