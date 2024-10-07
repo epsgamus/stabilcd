@@ -114,7 +114,7 @@ void I3G4250D_Init(void)
         }
     }
     // fifo and ints disable
-    I3G4250D_SetFIFOMode_WMLevel(I3G4250D_FIFO_MODE_BYPASS, I3G4250D_FIFO_WM_LEVEL);
+    I3G4250D_SetFIFOMode_WMLevel(I3G4250D_FIFO_MODE_BYPASS, 0);
     I3G4250D_INT2InterruptCmd(DISABLE);
     I3G4250D_FIFOEnaCmd(DISABLE);
      
@@ -290,16 +290,11 @@ void I3G4250D_INT1InterruptCmd(uint8_t InterruptState)
   */
 void I3G4250D_INT2InterruptCmd(uint8_t InterruptState)
 {  
-  uint8_t tmpreg = 0;
-  
-  /* Read CTRL_REG3 register */
-  // I3G4250D_Read(&tmpreg, I3G4250D_CTRL_REG3_ADDR, 1);
-                  
-  //tmpreg &= ~((uint8_t)I3G4250D_CTRL3_I2_DRDY | I3G4250D_CTRL3_I2_WTM);	
-  if (InterruptState) tmpreg |= (I3G4250D_CTRL3_I2_DRDY | I3G4250D_CTRL3_I2_WTM);
-  
-  /* Write value to MEMS CTRL_REG3 regsister */
-  I3G4250D_Write(&tmpreg, I3G4250D_CTRL_REG3_ADDR, 1);
+    uint8_t tmpreg = 0;
+    
+    if (InterruptState) tmpreg |= I3G4250D_CTRL3_I2_WTM;
+
+    I3G4250D_Write(&tmpreg, I3G4250D_CTRL_REG3_ADDR, 1);
 }
 
 

@@ -69,6 +69,7 @@ extern float omega_z_bias;
 
 volatile uint8_t main_sts; 
 volatile uint8_t fifo_sts; 
+uint32_t delta_time_usec;
 
 static __IO uint32_t TimingDelay;
 RCC_ClocksTypeDef RCC_Clocks;
@@ -673,7 +674,7 @@ int main(void)
     I3G4250D_INT2_EXTI_Config(); 
     I3G4250D_INT2InterruptCmd(ENABLE);
     I3G4250D_FIFOEnaCmd(ENABLE);
-    I3G4250D_SetFIFOMode_WMLevel(I3G4250D_FIFO_MODE_FIFO, I3G4250D_FIFO_WM_LEVEL);
+    I3G4250D_SetFIFOMode_WMLevel(I3G4250D_FIFO_MODE_FIFO, I3G4250D_FIFO_WM_LEVEL-1);
 
     // clr (if any) pending line
     if(EXTI_GetITStatus(I3G4250D_SPI_INT2_EXTI_LINE) != RESET)
@@ -727,32 +728,40 @@ int main(void)
             //int8_t temp = I3G4250D_GetTemp();
             //uint8_t sts = I3G4250D_GetDataStatus();
             //uint8_t fifo = I3G4250D_GetFIFOStatus();
+
+            //LCD_Clear(LCD_COLOR_BLACK);
+
             if (!calib_flag)
             {
                 LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)blank);
             }
+            /*
             LCD_DisplayStringLine(LCD_LINE_1, (uint8_t*)blank);
             LCD_DisplayStringLine(LCD_LINE_2, (uint8_t*)blank);
             LCD_DisplayStringLine(LCD_LINE_3, (uint8_t*)blank);
             LCD_DisplayStringLine(LCD_LINE_4, (uint8_t*)blank);
             LCD_DisplayStringLine(LCD_LINE_5, (uint8_t*)blank);
             LCD_DisplayStringLine(LCD_LINE_6, (uint8_t*)blank);
+            LCD_DisplayStringLine(LCD_LINE_6, (uint8_t*)blank);
+            */
             
             cache[frame_cnt] = omega_z;
             
             sprintf((char*)str, "F=%04d", frame_cnt);
             LCD_DisplayStringLine(LCD_LINE_1, (uint8_t*)str);
-            sprintf((char*)str, "omega=%.1f", omega_z);
+            sprintf((char*)str, "omega=%5.1f", omega_z);
             LCD_DisplayStringLine(LCD_LINE_2, (uint8_t*)str);
-            sprintf((char*)str, "bias=%.1f", omega_z_bias);
+            sprintf((char*)str, "bias=%5.1f", omega_z_bias);
             LCD_DisplayStringLine(LCD_LINE_3, (uint8_t*)str);
-            sprintf((char*)str, "phi=%.1f", phi_integrated);
+            sprintf((char*)str, "phi=%6.1f", phi_integrated);
             LCD_DisplayStringLine(LCD_LINE_4, (uint8_t*)str);
             
             sprintf((char*)str, "sts=0x%X", main_sts);
             LCD_DisplayStringLine(LCD_LINE_5, (uint8_t*)str);
             sprintf((char*)str, "fifo=0x%X", fifo_sts);
             LCD_DisplayStringLine(LCD_LINE_6, (uint8_t*)str);
+            sprintf((char*)str, "deltaT=%5d", delta_time_usec/1000);
+            LCD_DisplayStringLine(LCD_LINE_7, (uint8_t*)str);
             
 
     

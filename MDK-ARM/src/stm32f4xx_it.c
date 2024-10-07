@@ -49,12 +49,15 @@
 /* Private variables ---------------------------------------------------------*/
 
 uint8_t pBuffer;
-uint32_t systick_cnt = 0;
+volatile uint32_t systick_cnt = 0;
+uint32_t time_prev_usec = 0;
+
 extern uint8_t lcd_period_flag;
 extern uint8_t exti_int2_flag;
 extern uint8_t calib_flag;
 extern float phi_integrated;
 extern float omega_z;
+extern uint32_t delta_time_usec;
 
 extern uint8_t main_sts; 
 extern uint8_t fifo_sts; 
@@ -180,10 +183,9 @@ void SysTick_Handler(void)
 {
     TimingDelay_Decrement();
     systick_cnt++;
-    if (systick_cnt == LCD_ILI9341_PERIOD_USEC)	
+    if (systick_cnt % LCD_ILI9341_PERIOD_USEC)	
     {
         lcd_period_flag = 1;
-		systick_cnt = 0;
 	}
 			
 }
@@ -195,9 +197,6 @@ void SysTick_Handler(void)
 /*  available peripheral interrupt handler's name please refer to the startup */
 /*  file (startup_stm32f429_439xx.s).                                               */
 /******************************************************************************/
-
-#define GYRO_ODR105_PERIOD_SEC		0.0095238095F
-
 
 /**
   * @brief  This function handles PPP interrupt request.
@@ -214,14 +213,21 @@ void EXTI2_IRQHandler(void)
         EXTI_ClearITPendingBit(I3G4250D_SPI_INT2_EXTI_LINE);   
         exti_int2_flag = 1;
     }
+    
+    delta_time_usec = systick_cnt - time_prev_usec;
+    time_prev_usec = systick_cnt;
    
     // read sts
     main_sts = I3G4250D_GetDataStatus();
     fifo_sts = I3G4250D_GetFIFOStatus();
     
+    // get actual fifo entries qty
+    uint8_t fss = fifo_sts & I3G4250D_FIFO_SRC_FSS_MASK;
+    if ((fss == 31)&&(fifo_sts & I3G4250D_FIFO_SRC_OVRN)) fss++;
+   
     // readout FIFO head
-    uint8_t tmpbuffer[6*I3G4250D_FIFO_WM_LEVEL];
-    for (uint8_t i=0; i<I3G4250D_FIFO_WM_LEVEL; i++)
+    uint8_t tmpbuffer[6*32];
+    for (uint8_t i=0; i<fss; i++)
     {
         // dummy read
         uint8_t tmp;
@@ -237,12 +243,13 @@ void EXTI2_IRQHandler(void)
     
   
     // reset FIFO: to BYPASS mode
-    I3G4250D_SetFIFOMode_WMLevel(I3G4250D_FIFO_MODE_BYPASS, I3G4250D_FIFO_WM_LEVEL);
+    I3G4250D_SetFIFOMode_WMLevel(I3G4250D_FIFO_MODE_BYPASS, 0);
 
     int16_t omega_raw = 0;
     
 #ifdef  I3G4250D_CALIB_PREFILTER_MEDIAN    
-    // median
+    // median (todo)
+    /*
     uint8_t max_idx = 255;
     int16_t max = -32767;
     int16_t tmp[I3G4250D_FIFO_WM_LEVEL];
@@ -263,6 +270,7 @@ void EXTI2_IRQHandler(void)
             omega_raw = tmp[i];
         }
     }
+    */
 #else     
     // mean
     int32_t sum = 0;
@@ -271,7 +279,7 @@ void EXTI2_IRQHandler(void)
         int16_t tmp = (int16_t)(((uint16_t)tmpbuffer[5+6*i] << 8) | (uint16_t)tmpbuffer[4+6*i]);
         sum += (int32_t)tmp;
         // tmply
-        if (tmp_cnt < I3G4250D_CALIB_SAMPLES) tmp_calib_int[tmp_cnt++] = tmp;
+        //if (tmp_cnt < I3G4250D_CALIB_SAMPLES) tmp_calib_int[tmp_cnt++] = tmp;
          
     }
     omega_raw = (int16_t)(sum/I3G4250D_FIFO_WM_LEVEL); 
@@ -286,26 +294,25 @@ void EXTI2_IRQHandler(void)
         // clr it
         calib_flag = 0; 
         // integrate
-        phi_integrated += omega_z*GYRO_ODR105_PERIOD_SEC*I3G4250D_FIFO_WM_LEVEL;    
-        
+        phi_integrated += omega_z*(float)(delta_time_usec/1000)*1.0e-03;  
     }
     if (calib_flag)
     {
         if (calib_cnt < I3G4250D_CALIB_SAMPLES)
         {
-            //if (fabs(omega_z) <= 2.0) calib_sum += omega_z; else calib_sum += 2.0*sgn(omega_z);
             calib_sum += omega_z;
             // tmply store
-            tmp_calib[calib_cnt] = omega_z;
+            // tmp_calib[calib_cnt] = omega_z;
             calib_cnt++;
            
         }
     }   
     
     
+    
     // reset FIFO: to FIFO mode again
     I3G4250D_INT2InterruptCmd(ENABLE);
-    I3G4250D_SetFIFOMode_WMLevel(I3G4250D_FIFO_MODE_FIFO, I3G4250D_FIFO_WM_LEVEL);
+    I3G4250D_SetFIFOMode_WMLevel(I3G4250D_FIFO_MODE_FIFO, I3G4250D_FIFO_WM_LEVEL-1);
 
     exti_int2_flag = 0;
 }

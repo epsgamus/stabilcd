@@ -110,7 +110,7 @@ typedef struct
 #define I3G4250D_FIFO_WM_LEVEL    3
 
 // calib samples
-#define I3G4250D_CALIB_SAMPLES      500
+#define I3G4250D_CALIB_SAMPLES      300
 
 // mean/median filter of triples (todo)
 //#define I3G4250D_CALIB_PREFILTER_MEDIAN
@@ -447,6 +447,16 @@ typedef struct
   * @}
   */
 
+/** @defgroup FIFO_SRC
+  * @{
+  */   
+#define I3G4250D_FIFO_SRC_WTM         1 << 7
+#define I3G4250D_FIFO_SRC_OVRN        1 << 6
+#define I3G4250D_FIFO_SRC_EMPTY       1 << 5
+#define I3G4250D_FIFO_SRC_FSS_MASK    0x1F
+/**
+  * @}
+  */
 
 
 
