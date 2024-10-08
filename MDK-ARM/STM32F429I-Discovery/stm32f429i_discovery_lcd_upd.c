@@ -1,9 +1,10 @@
 /**
   ******************************************************************************
   * @file    stm32f429i_discovery_lcd_upd.c
-  * @author  MCD Application Team, YE
-  * @version V1.0.3, 
-  * @date    05-March-2021, Apr 2023
+  * @author  MCD Application Team
+  * @changed eg
+  * @version 
+  * @date    
   * @brief   This file includes the LCD driver for ILI9341 Liquid Crystal 
   *          Display Modules of STM32F429I-DISCO kit (MB1075).
   ******************************************************************************

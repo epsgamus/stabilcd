@@ -1,11 +1,32 @@
 /**
   ******************************************************************************
   * @file    stm32f429i_discovery_i3g4250d.c
+  * @author  MCD Application Team
+  * @changed eg  
+  * @version 
+  * @date    
   * @brief   This file provides a set of functions needed to manage the i3g4250d
-  *          MEMS three-axis digital output gyroscope available on 
-  *          STM32F429I-DISCOVERY V1
+  *          MEMS three-axis digital output gyroscope available on STM32F429I-DISCO Kit.
+  ******************************************************************************
+  * @attention
+  *
+  * <h2><center>&copy; COPYRIGHT 2013 STMicroelectronics</center></h2>
+  *
+  * Licensed under MCD-ST Liberty SW License Agreement V2, (the "License");
+  * You may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at:
+  *
+  *        http://www.st.com/software_license_agreement_liberty_v2
+  *
+  * Unless required by applicable law or agreed to in writing, software 
+  * distributed under the License is distributed on an "AS IS" BASIS, 
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *
   ******************************************************************************
   */
+
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f429i_discovery_i3g4250d.h"
 /** @addtogroup Utilities
@@ -167,19 +188,6 @@ int8_t I3G4250D_GetTemp(void)
     /* Read CTRL_REG5 register */
     I3G4250D_Read(&tmpreg, I3G4250D_OUT_TEMP_ADDR, 1);
     
-//    int8_t temp; 
-    
-    /*
-    if (tmpreg < 128) 
-    {
-        temp = (int8_t)tmpreg;
-    }
-    else
-    {
-        temp = (int8_t)(tmpreg - 256);
-    }
-    */
-       
     return tmpreg;
 }
 
@@ -631,9 +639,6 @@ void I3G4250D_INT2_EXTI_Config(void)
   // PA2 pin
   RCC_AHB1PeriphClockCmd(I3G4250D_SPI_INT2_GPIO_CLK, ENABLE);
   
-  // EXTI clk
-  //RCC_APB2PeriphClockCmd(RCC_APB2Periph_EXTIT, ENABLE);
-
   // SYSCFG clk
   RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
      
@@ -642,7 +647,7 @@ void I3G4250D_INT2_EXTI_Config(void)
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
   GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_NOPULL;
   GPIO_Init(I3G4250D_SPI_INT2_GPIO_PORT, &GPIO_InitStructure);
-  /* Connect Button EXTI Line to INT2 GPIO Pin */
+  /* Connect EXTI Line to INT2 GPIO Pin */
   SYSCFG_EXTILineConfig(I3G4250D_SPI_INT2_EXTI_PORT_SOURCE, I3G4250D_SPI_INT2_EXTI_PIN_SOURCE);  
   
   /* Configure INT2 EXTI line */
@@ -652,22 +657,12 @@ void I3G4250D_INT2_EXTI_Config(void)
   EXTI_InitStructure.EXTI_LineCmd = ENABLE;
   EXTI_Init(&EXTI_InitStructure);
   
-    // Set the Vector Table base location at 0x08000000 
-	NVIC_SetVectorTable(NVIC_VectTab_FLASH, 0x0);
-	
-
-	// 2 bit for pre-emption priority, 2 bits for subpriority 
-	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2); 
-	
-  
   /* Enable and set INT2 EXTI Interrupt to the lowest priority */
   NVIC_InitStructure.NVIC_IRQChannel = I3G4250D_SPI_INT2_EXTI_IRQn;
   NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x7;
   NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x0;
   NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
   NVIC_Init(&NVIC_InitStructure); 
-  
- // __enable_irq();
   
 }
 

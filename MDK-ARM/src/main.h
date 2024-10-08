@@ -77,6 +77,8 @@ typedef struct
 
 
 /* Exported macro ------------------------------------------------------------*/
+#define ABS(x)                     (x < 0) ? (-x) : x
+
 /* Exported functions ------------------------------------------------------- */
 void Delay(__IO uint32_t nTime);
 void TimingDelay_Decrement(void);

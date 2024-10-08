@@ -214,6 +214,7 @@ void EXTI2_IRQHandler(void)
         exti_int2_flag = 1;
     }
     
+    // used after calib completion
     delta_time_usec = systick_cnt - time_prev_usec;
     time_prev_usec = systick_cnt;
    
@@ -245,34 +246,7 @@ void EXTI2_IRQHandler(void)
     // reset FIFO: to BYPASS mode
     I3G4250D_SetFIFOMode_WMLevel(I3G4250D_FIFO_MODE_BYPASS, 0);
 
-    int16_t omega_raw = 0;
-    
-#ifdef  I3G4250D_CALIB_PREFILTER_MEDIAN    
-    // median (todo)
-    /*
-    uint8_t max_idx = 255;
-    int16_t max = -32767;
-    int16_t tmp[I3G4250D_FIFO_WM_LEVEL];
-    for (uint8_t i=0; i<I3G4250D_FIFO_WM_LEVEL; i++)
-    {
-        tmp[i] = (int16_t)(((uint16_t)tmpbuffer[5+6*i] << 8) | (uint16_t)tmpbuffer[4+6*i]);
-        if (tmp[i] >= max)
-        {
-            max = tmp[i];
-            max_idx = i;
-        }
-    }
-    omega_raw = -32767;
-    for (uint8_t i=0; (i<I3G4250D_FIFO_WM_LEVEL)&&(i!=max_idx); i++)
-    {
-        if (tmp[i] >= omega_raw)
-        {
-            omega_raw = tmp[i];
-        }
-    }
-    */
-#else     
-    // mean
+    // int rate mean by triples
     int32_t sum = 0;
     for (uint8_t i=0; i<I3G4250D_FIFO_WM_LEVEL; i++)
     {
@@ -282,9 +256,9 @@ void EXTI2_IRQHandler(void)
         //if (tmp_cnt < I3G4250D_CALIB_SAMPLES) tmp_calib_int[tmp_cnt++] = tmp;
          
     }
-    omega_raw = (int16_t)(sum/I3G4250D_FIFO_WM_LEVEL); 
-#endif    
-    
+    int32_t omega_raw = (int16_t)(sum/I3G4250D_FIFO_WM_LEVEL); 
+
+    // float rate
     omega_z = (float)omega_raw/L3G_Sensitivity_245dps - omega_z_bias;
     
     if (calib_cnt == I3G4250D_CALIB_SAMPLES) 
@@ -304,11 +278,8 @@ void EXTI2_IRQHandler(void)
             // tmply store
             // tmp_calib[calib_cnt] = omega_z;
             calib_cnt++;
-           
         }
     }   
-    
-    
     
     // reset FIFO: to FIFO mode again
     I3G4250D_INT2InterruptCmd(ENABLE);

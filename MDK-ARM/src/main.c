@@ -2,8 +2,9 @@
   ******************************************************************************
   * @file    MEMS_Example/main.c 
   * @author  MCD Application Team
-  * @version V1.0.1
-  * @date    11-November-2013
+  * @changed eg
+  * @version 
+  * @date    
   * @brief   This example shows a simple test of how to use the MEMS sensor(I3G4250D) 
              mounted on the STM32F429I-DISCO board.
   ******************************************************************************
@@ -40,13 +41,7 @@
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
-#define ABS(x)                     (x < 0) ? (-x) : x
 
-#if 0
-#define L3G_Sensitivity_250dps     (float)114.285f        /*!< gyroscope sensitivity with 250 dps full scale [LSB/dps]  */
-#define L3G_Sensitivity_500dps     (float)57.1429f        /*!< gyroscope sensitivity with 500 dps full scale [LSB/dps]  */
-#define L3G_Sensitivity_2000dps    (float)14.285f         /*!< gyroscope sensitivity with 2000 dps full scale [LSB/dps] */
-#endif	
     
 uint8_t lcd_period_flag = 0;
 uint8_t exti_int2_flag = 0;
