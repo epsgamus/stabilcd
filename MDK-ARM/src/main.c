@@ -54,9 +54,6 @@ float Gyro[3];
 float X_BiasError, Y_BiasError, Z_BiasError = 0.0;
 uint8_t Xval, Yval = 0x00;
 
-// tmply
-#define CACHE_DEPTH     100
-float cache[CACHE_DEPTH];
 
 float phi_integrated = 0.0;
 float omega_z = 0.0;
@@ -625,31 +622,8 @@ int main(void)
         sprintf((char*)str, "Sensor ID=0x%X", id);
         LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)str);
     }
+    LCD_DisplayStringLine(LCD_LINE_1, (uint8_t*)"Press USER...");
 
-    // tmply
-    uint8_t sts = I3G4250D_GetDataStatus();
-    uint8_t fifo = I3G4250D_GetFIFOStatus();
-    sprintf((char*)str, "sts=0x%X", sts);
-    LCD_DisplayStringLine(LCD_LINE_3, (uint8_t*)str);
-    sprintf((char*)str, "fifo=0x%X", fifo);
-    LCD_DisplayStringLine(LCD_LINE_4, (uint8_t*)str);
-
-   
-  
-    /* Gyroscope calibration */
-    //Gyro_SimpleCalibration(Gyro);
-    
-    /* Disable all interrupts for a while */  
-    //I3G4250D_INT1InterruptCmd(DISABLE);
-    //I3G4250D_INT2InterruptCmd(ENABLE);
-    
-    // configure INT2/DRDY
-    //I3G4250D_INT2InterruptConfig();
-    
-    
-    
-    
-    
     
     /* Wait user button to be pressed */
     while(STM_EVAL_PBGetState(BUTTON_USER) != RESET)
@@ -719,10 +693,6 @@ int main(void)
             // redraw
             //DrawActiveZone((uint8_t*)frame_new, LCD_SIZE_PIXEL_WIDTH/2, LCD_SIZE_PIXEL_HEIGHT/2, BACKGR_COLOR);
 
-            // tmply
-            //int8_t temp = I3G4250D_GetTemp();
-            //uint8_t sts = I3G4250D_GetDataStatus();
-            //uint8_t fifo = I3G4250D_GetFIFOStatus();
 
             //LCD_Clear(LCD_COLOR_BLACK);
 
@@ -731,24 +701,28 @@ int main(void)
                 LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)blank);
             }
             
-            cache[frame_cnt] = omega_z;
-            
+            /*
             sprintf((char*)str, "F=%04d", frame_cnt);
             LCD_DisplayStringLine(LCD_LINE_1, (uint8_t*)str);
+            */
             sprintf((char*)str, "omega=%5.1f", omega_z);
+            LCD_DisplayStringLine(LCD_LINE_1, (uint8_t*)str);
+            sprintf((char*)str, "phi=%6.1f", phi_integrated);
             LCD_DisplayStringLine(LCD_LINE_2, (uint8_t*)str);
+            sprintf((char*)str, "deltaT=%5d", delta_time_usec/1000);
+            LCD_DisplayStringLine(LCD_LINE_3, (uint8_t*)str);
+            /*
             sprintf((char*)str, "bias=%5.1f", omega_z_bias);
             LCD_DisplayStringLine(LCD_LINE_3, (uint8_t*)str);
             sprintf((char*)str, "phi=%6.1f", phi_integrated);
             LCD_DisplayStringLine(LCD_LINE_4, (uint8_t*)str);
-            
             sprintf((char*)str, "sts=0x%X", main_sts);
             LCD_DisplayStringLine(LCD_LINE_5, (uint8_t*)str);
             sprintf((char*)str, "fifo=0x%X", fifo_sts);
             LCD_DisplayStringLine(LCD_LINE_6, (uint8_t*)str);
             sprintf((char*)str, "deltaT=%5d", delta_time_usec/1000);
             LCD_DisplayStringLine(LCD_LINE_7, (uint8_t*)str);
-            
+            */
 
     
             // integrate calc phi

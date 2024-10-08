@@ -2,8 +2,9 @@
   ******************************************************************************
   * @file    MEMS_Example/stm32f4xx_it.c 
   * @author  MCD Application Team
-  * @version V1.0.1
-  * @date    11-November-2013
+  * @changed eg
+  * @version 
+  * @date    
   * @brief   Main Interrupt Service Routines.
   *          This file provides template for all exceptions handler and 
   *          peripherals interrupt service routine.
@@ -39,7 +40,10 @@
   */
 
 /* Private typedef -----------------------------------------------------------*/
+
 /* Private define ------------------------------------------------------------*/
+//#define STABILCD_GYRO_TMPLY_VECTORS
+
 /* Private macro -------------------------------------------------------------*/
 #define MACHEPS_FLOAT   1e-06
 #define MAX(x,y)    (x < y) ? y : x
@@ -48,7 +52,6 @@
 
 /* Private variables ---------------------------------------------------------*/
 
-uint8_t pBuffer;
 volatile uint32_t systick_cnt = 0;
 uint32_t time_prev_usec = 0;
 
@@ -66,9 +69,11 @@ float omega_z_bias = 0.0;
 float calib_sum = 0.0;
 uint32_t calib_cnt = 0;
 
-volatile float tmp_calib[I3G4250D_CALIB_SAMPLES];
+#ifdef STABILCD_GYRO_TMPLY_VECTORS
+float tmp_calib[I3G4250D_CALIB_SAMPLES];
 int16_t tmp_calib_int[I3G4250D_CALIB_SAMPLES];
 uint32_t tmp_cnt = 0;
+#endif
 
 
 /* Private function prototypes -----------------------------------------------*/
@@ -252,9 +257,10 @@ void EXTI2_IRQHandler(void)
     {
         int16_t tmp = (int16_t)(((uint16_t)tmpbuffer[5+6*i] << 8) | (uint16_t)tmpbuffer[4+6*i]);
         sum += (int32_t)tmp;
+#ifdef STABILCD_GYRO_TMPLY_VECTORS        
         // tmply
-        //if (tmp_cnt < I3G4250D_CALIB_SAMPLES) tmp_calib_int[tmp_cnt++] = tmp;
-         
+        if (tmp_cnt < I3G4250D_CALIB_SAMPLES) tmp_calib_int[tmp_cnt++] = tmp;
+#endif
     }
     int32_t omega_raw = (int16_t)(sum/I3G4250D_FIFO_WM_LEVEL); 
 
@@ -275,8 +281,10 @@ void EXTI2_IRQHandler(void)
         if (calib_cnt < I3G4250D_CALIB_SAMPLES)
         {
             calib_sum += omega_z;
+#ifdef STABILCD_GYRO_TMPLY_VECTORS
             // tmply store
-            // tmp_calib[calib_cnt] = omega_z;
+            tmp_calib[calib_cnt] = omega_z;
+#endif
             calib_cnt++;
         }
     }   
