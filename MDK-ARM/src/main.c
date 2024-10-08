@@ -735,15 +735,6 @@ int main(void)
             {
                 LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)blank);
             }
-            /*
-            LCD_DisplayStringLine(LCD_LINE_1, (uint8_t*)blank);
-            LCD_DisplayStringLine(LCD_LINE_2, (uint8_t*)blank);
-            LCD_DisplayStringLine(LCD_LINE_3, (uint8_t*)blank);
-            LCD_DisplayStringLine(LCD_LINE_4, (uint8_t*)blank);
-            LCD_DisplayStringLine(LCD_LINE_5, (uint8_t*)blank);
-            LCD_DisplayStringLine(LCD_LINE_6, (uint8_t*)blank);
-            LCD_DisplayStringLine(LCD_LINE_6, (uint8_t*)blank);
-            */
             
             cache[frame_cnt] = omega_z;
             
