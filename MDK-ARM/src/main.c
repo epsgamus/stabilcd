@@ -140,6 +140,7 @@ static void RotateActiveZone(uint8_t *dst_image, uint8_t *src_image, float phi, 
     }
     
     
+    
     // fpu burden
     float cos_phi = cos(phi);
     float sin_phi = sin(phi);
@@ -157,26 +158,32 @@ static void RotateActiveZone(uint8_t *dst_image, uint8_t *src_image, float phi, 
             
             // new displacements
             vec_2_d vec_dst = VectorSimpleRotation(vec_src, cos_phi, sin_phi);
+            //vec_2_d vec_dst = vec_src;
             
             // their fraction parts
+            
             double i_int, j_int;
             float i_frac = modf(vec_dst.i1, &i_int);
             float j_frac = modf(vec_dst.i2, &j_int);
             
             uint32_t ii = (uint32_t)i_int; 
             uint32_t jj = (uint32_t)j_int; 
-            
+            /*
+            uint32_t ii = i; 
+            uint32_t jj = j; 
+            */
             
             if ((ii > 0)&&(jj > 0)&&(ii < ACTIVE_HEIGHT-1)&&(jj < ACTIVE_WIDTH-1)) 
             {
                 dst_image[ii*ACTIVE_WIDTH + jj] = px;
-                
+                /*
                 // where to bloom horzly
                 if (i_frac < BLOOMING_LO_THRESH) dst_image[(ii - 1)*ACTIVE_WIDTH + jj] = px;
                 if (i_frac > BLOOMING_HI_THRESH) dst_image[(ii + 1)*ACTIVE_WIDTH + jj] = px;
                 // where to bloom vertly
                 if (j_frac < BLOOMING_LO_THRESH) dst_image[ii*ACTIVE_WIDTH + jj - 1] = px;
                 if (j_frac > BLOOMING_HI_THRESH) dst_image[ii*ACTIVE_WIDTH + jj + 1] = px;
+                */
                 
             }
                 
@@ -695,7 +702,7 @@ int main(void)
 
                 
             // tgl LED4
-            STM_EVAL_LEDToggle(LED4);
+            //STM_EVAL_LEDToggle(LED4);
             
           
             // rotate
@@ -747,18 +754,20 @@ int main(void)
     
     
             // integrate calc phi
-            phi += StabilPhiCalc();
+            //phi += StabilPhiCalc();
             
         
             // reassign
             //ReassignActiveZone((uint8_t*)frame_cur, (uint8_t*)frame_new);
             
+            /*
 			frame_cnt++;
 			if (frame_cnt == LCD_ILI9341_FPS_INT + 1) 
             {
                 frame_cnt = 0;
             }   
 			lcd_period_flag = 0;
+            */
 		}
         
         
