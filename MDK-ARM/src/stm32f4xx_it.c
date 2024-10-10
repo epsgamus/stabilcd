@@ -217,6 +217,7 @@ void EXTI2_IRQHandler(void)
         STM_EVAL_LEDToggle(LED3);
         EXTI_ClearITPendingBit(I3G4250D_SPI_INT2_EXTI_LINE);   
         exti_int2_flag = 1;
+
     }
     
     // used after calib completion

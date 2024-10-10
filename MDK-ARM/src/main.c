@@ -59,6 +59,8 @@ float phi_integrated = 0.0;
 float omega_z = 0.0;
 extern float omega_z_bias;
 
+extern uint32_t systick_cnt;
+
 volatile uint8_t main_sts; 
 volatile uint8_t fifo_sts; 
 uint32_t delta_time_usec;
@@ -576,6 +578,7 @@ int main(void)
     STM_EVAL_PBInit(BUTTON_USER, BUTTON_MODE_GPIO); 
 
     STM_EVAL_LEDOff(LED3);
+    STM_EVAL_LEDOff(LED4);
 
   
     /* SysTick end of count event each 1 us */
@@ -595,11 +598,27 @@ int main(void)
   
     /* Clear the Background Layer */ 
     LCD_Clear(LCD_COLOR_BLACK);
-	LCD_SetColors(LCD_COLOR_YELLOW, LCD_COLOR_BLACK);
+	LCD_SetColors(LCD_COLOR_BLUE, LCD_COLOR_WHITE);
 	
     uint8_t str[15];
     const uint8_t blank[15] = "               ";
     
+   
+   
+    // BMP read
+    uint32_t bmp_width, bmp_height;
+    uint32_t bytes = ReadBMP(IMG_BMP_ADDR, (uint8_t*)frame_bmp, &bmp_width, &bmp_height);
+    if (bytes == bmp_width*bmp_height)
+    {
+        sprintf((char*)str, "BMP %dx%d Ok", bmp_width, bmp_height);
+    }
+    else
+    {
+        sprintf((char*)str, "BMP error=%d", bytes);
+    }
+    LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)str);
+    //Delay(500000);
+    InitActiveZone((uint8_t*)frame_cur, (uint8_t*)frame_bmp);
    
    
     // > 10 ms since poweron
@@ -615,14 +634,14 @@ int main(void)
     I3G4250D_Read(&id, I3G4250D_WHO_AM_I_ADDR, 1);
     if (id == I_AM_I3G4250D)
     {
-        LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)"Sensor:I3G4250D");
+        LCD_DisplayStringLine(LCD_LINE_1, (uint8_t*)"Sensor:I3G4250D");
     }
     else
     {
         sprintf((char*)str, "Sensor ID=0x%X", id);
-        LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)str);
+        LCD_DisplayStringLine(LCD_LINE_1, (uint8_t*)str);
     }
-    LCD_DisplayStringLine(LCD_LINE_1, (uint8_t*)"Press USER...");
+    LCD_DisplayStringLine(LCD_LINE_2, (uint8_t*)"Press USER...");
 
     
     /* Wait user button to be pressed */
@@ -654,63 +673,64 @@ int main(void)
         
        
         
-	/*
-    // BMP read
-    uint32_t bmp_width, bmp_height;
-    uint32_t bytes = ReadBMP(IMG_BMP_ADDR, (uint8_t*)frame_bmp, &bmp_width, &bmp_height);
-
-    sprintf((char*)str, "BMP read Ok");
-  	LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)str);
-    sprintf((char*)str, "width=%d", bmp_width);
-  	LCD_DisplayStringLine(LCD_LINE_1, (uint8_t*)str);
-    sprintf((char*)str, "height=%d", bmp_height);
-  	LCD_DisplayStringLine(LCD_LINE_2, (uint8_t*)str);
-        
-    Delay(500000);
-
-    InitActiveZone((uint8_t*)frame_cur, (uint8_t*)frame_bmp);
-    */
     
     float phi = 0.0;
 
     // rewind phi
 	phi_integrated = 0.0;
+    
+    uint32_t systick_prev = 0;
+    uint32_t delta_frame_usec = 0;
 
 
     while (1)
     {
         
                 
-        if (lcd_period_flag)
+        //if (lcd_period_flag)
         {
+
+            delta_frame_usec = systick_cnt-systick_prev;
+            systick_prev = systick_cnt;
+
+                
+            // tgl LED4
+            STM_EVAL_LEDToggle(LED4);
             
           
-            //Demo_MEMS();	
-
             // rotate
-            //RotateActiveZone((uint8_t*)frame_new, (uint8_t*)frame_cur, phi, BACKGR_COLOR);
+            RotateActiveZone((uint8_t*)frame_new, (uint8_t*)frame_cur, -phi_integrated*MATH_PI/180.0, BACKGR_COLOR);
 
             // redraw
-            //DrawActiveZone((uint8_t*)frame_new, LCD_SIZE_PIXEL_WIDTH/2, LCD_SIZE_PIXEL_HEIGHT/2, BACKGR_COLOR);
+            DrawActiveZone((uint8_t*)frame_new, LCD_SIZE_PIXEL_WIDTH/2, LCD_SIZE_PIXEL_HEIGHT/2, BACKGR_COLOR);
 
 
             //LCD_Clear(LCD_COLOR_BLACK);
 
-            if (!calib_flag)
+            if (calib_flag)
             {
-                LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)blank);
+                LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)"Calibration...");
             }
             
             /*
             sprintf((char*)str, "F=%04d", frame_cnt);
             LCD_DisplayStringLine(LCD_LINE_1, (uint8_t*)str);
             */
+            /*
             sprintf((char*)str, "omega=%5.1f", omega_z);
             LCD_DisplayStringLine(LCD_LINE_1, (uint8_t*)str);
             sprintf((char*)str, "phi=%6.1f", phi_integrated);
             LCD_DisplayStringLine(LCD_LINE_2, (uint8_t*)str);
             sprintf((char*)str, "deltaT=%5d", delta_time_usec/1000);
             LCD_DisplayStringLine(LCD_LINE_3, (uint8_t*)str);
+            sprintf((char*)str, "deltaF=%5d", delta_frame_usec/1000);
+            LCD_DisplayStringLine(LCD_LINE_4, (uint8_t*)str);
+            */
+            sprintf((char*)str, "deltaT=%5d", delta_time_usec/1000);
+            LCD_DisplayStringLine(LCD_LINE_3, (uint8_t*)str);
+            sprintf((char*)str, "deltaF=%5d", delta_frame_usec/1000);
+            LCD_DisplayStringLine(LCD_LINE_4, (uint8_t*)str);
+
             /*
             sprintf((char*)str, "bias=%5.1f", omega_z_bias);
             LCD_DisplayStringLine(LCD_LINE_3, (uint8_t*)str);
@@ -724,6 +744,7 @@ int main(void)
             LCD_DisplayStringLine(LCD_LINE_7, (uint8_t*)str);
             */
 
+    
     
             // integrate calc phi
             phi += StabilPhiCalc();
@@ -741,15 +762,7 @@ int main(void)
 		}
         
         
-        // 
-        /*
-        if (!exti_int2_flag && (calib_cnt == I3G4250D_CALIB_SAMPLES))
-        {
-            // calc bias
-            omega_z_bias = calib_sum/(float)I3G4250D_CALIB_SAMPLES;
-            calib_flag = 0; 
-        }
-        */
+
     }
 }
 
