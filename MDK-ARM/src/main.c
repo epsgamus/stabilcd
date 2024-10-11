@@ -44,17 +44,9 @@
 
     
 uint8_t lcd_period_flag = 0;
-uint8_t exti_int2_flag = 0;
 uint8_t calib_flag = 0;
-uint32_t frame_cnt = 0;
 
 /* Private variables ---------------------------------------------------------*/
-float Buffer[6];
-float Gyro[3];
-float X_BiasError, Y_BiasError, Z_BiasError = 0.0;
-uint8_t Xval, Yval = 0x00;
-
-
 float phi_integrated = 0.0;
 float omega_z = 0.0;
 extern float omega_z_bias;
@@ -80,30 +72,14 @@ uint8_t frame_bmp[BMP_WIDTH*BMP_HEIGHT];
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
-static void Demo_GyroReadAngRate (float* pfData);
-static void Gyro_SimpleCalibration(float* GyroData);
-
 
 
 /**
-* @brief  
-* @param  None
-* @retval None
-*/
-static float StabilPhiCalc(void)
-{
-    // tmply
-    float phi = (360.0/LCD_ILI9341_FPS_INT)*MATH_PI/180.0;
-    
-    return phi;
-}
-
-/**
-* @brief  
+* @brief  Load active zone with a bitmap
 * @param  dst active zone image address, src bmp image address
 * @retval None
 */
-static void InitActiveZone(uint8_t *dst_image, uint8_t *bmp_image)
+static void InitActiveZone(uint8_t *dst_image, uint8_t *bmp_image, uint8_t back_color)
 {
 	uint32_t i,j;
     for (i=0; i<ACTIVE_HEIGHT; i++)
@@ -114,7 +90,7 @@ static void InitActiveZone(uint8_t *dst_image, uint8_t *bmp_image)
                 (i >= ACTIVE_HEIGHT/2 - BMP_HEIGHT/2)&&(i < ACTIVE_HEIGHT/2 + BMP_HEIGHT/2))
                 *(dst_image + i*ACTIVE_WIDTH + j) = \
                 *(bmp_image + (i - ACTIVE_HEIGHT/2 + BMP_HEIGHT/2)*BMP_WIDTH + j - ACTIVE_WIDTH/2 + BMP_WIDTH/2);
-            else *(dst_image + i*ACTIVE_WIDTH + j) = 255;
+            else *(dst_image + i*ACTIVE_WIDTH + j) = back_color;
         }
     }
 }
@@ -128,8 +104,8 @@ static void InitActiveZone(uint8_t *dst_image, uint8_t *bmp_image)
 static void RotateActiveZone(uint8_t *dst_image, uint8_t *src_image, float phi, uint8_t back_color)
 {
     
-	int32_t i,j;
-    
+	uint32_t i,j;
+
     // clr
     for (i=0; i<ACTIVE_HEIGHT; i++)
     {
@@ -138,8 +114,6 @@ static void RotateActiveZone(uint8_t *dst_image, uint8_t *src_image, float phi, 
             dst_image[i*ACTIVE_WIDTH + j] = back_color;
         }
     }
-    
-    
     
     // fpu burden
     float cos_phi = cos(phi);
@@ -156,62 +130,34 @@ static void RotateActiveZone(uint8_t *dst_image, uint8_t *src_image, float phi, 
                 
             vec_2_d vec_src = {(float)i, (float)j};
             
-            // new displacements
+            // find out where another point of interest is after rotation
             vec_2_d vec_dst = VectorSimpleRotation(vec_src, cos_phi, sin_phi);
-            //vec_2_d vec_dst = vec_src;
             
-            // their fraction parts
+            // extract their fraction parts (modf was time-devouring)
+            uint32_t ii = (uint32_t)vec_dst.i1; 
+            uint32_t jj = (uint32_t)vec_dst.i2; 
+            float i_frac = vec_dst.i1 - (float)ii;
+            float j_frac = vec_dst.i2 - (float)jj;
             
-            double i_int, j_int;
-            float i_frac = modf(vec_dst.i1, &i_int);
-            float j_frac = modf(vec_dst.i2, &j_int);
-            
-            uint32_t ii = (uint32_t)i_int; 
-            uint32_t jj = (uint32_t)j_int; 
-            /*
-            uint32_t ii = i; 
-            uint32_t jj = j; 
-            */
-            
+            // cond trueish
             if ((ii > 0)&&(jj > 0)&&(ii < ACTIVE_HEIGHT-1)&&(jj < ACTIVE_WIDTH-1)) 
             {
                 dst_image[ii*ACTIVE_WIDTH + jj] = px;
-                /*
+                
+                // apply edge smoother
                 // where to bloom horzly
                 if (i_frac < BLOOMING_LO_THRESH) dst_image[(ii - 1)*ACTIVE_WIDTH + jj] = px;
                 if (i_frac > BLOOMING_HI_THRESH) dst_image[(ii + 1)*ACTIVE_WIDTH + jj] = px;
                 // where to bloom vertly
                 if (j_frac < BLOOMING_LO_THRESH) dst_image[ii*ACTIVE_WIDTH + jj - 1] = px;
                 if (j_frac > BLOOMING_HI_THRESH) dst_image[ii*ACTIVE_WIDTH + jj + 1] = px;
-                */
-                
             }
-                
-            
         }
     }
     
 }
 
-#if 0
-/**
-* @brief  Reassign (copy) active zone
-* @param  dst image address, src image address
-* @retval None
-*/
-static void ReassignActiveZone(uint8_t *dst_image, uint8_t *src_image)
-{
-    
-	uint32_t i,j;
-    for (i=0; i<ACTIVE_HEIGHT; i++)
-    {
-        for (j=0; j<ACTIVE_WIDTH; j++) 
-        {
-            dst_image[i*ACTIVE_WIDTH + j] = src_image[i*ACTIVE_WIDTH + j];
-        }
-    }
-}
-#endif
+
 
 /**
 * @brief  Read BMP
@@ -327,213 +273,7 @@ static void DrawActiveZone(uint8_t *img, uint16_t horz_pos, uint16_t vert_pos, u
 }
 
 
-#if 0  
 
-/**
-* @brief  Mems gyroscope Demo application.
-* @param  None
-* @retval None
-*/
-static void Demo_MEMS(void)
-{   
-	
-	uint8_t str[20];
-  
-  /* Read Gyro Angular data */
-  Demo_GyroReadAngRate(Buffer);
-
-  Buffer[0] = (int8_t)Buffer[0] - (int8_t)Gyro[0];
-  Buffer[1] = (int8_t)Buffer[1] - (int8_t)Gyro[1];
-  
-  /* Update autoreload and capture compare registers value*/
-  Xval = ABS((int8_t)(Buffer[0]));
-  Yval = ABS((int8_t)(Buffer[1])); 
-	
-/*	
-	////
-	sprintf((char*)str, "X=%10.2f", Buffer[0]);
-	LCD_DisplayStringLine(LCD_LINE_2, (uint8_t*)str);
-	sprintf((char*)str, "Y=%10.2f", Buffer[1]);
-	LCD_DisplayStringLine(LCD_LINE_3, (uint8_t*)str);
-	sprintf((char*)str, "Z=%10.2f", Buffer[2]);
-	LCD_DisplayStringLine(LCD_LINE_4, (uint8_t*)str);
-*/	
-	///
-	
-	LCD_Refresh_BMP();
-
-  if ( Xval>Yval)
-  {
-    if ((int16_t)Buffer[0] > 40)
-    {
-			/* Clear the LCD */
-      LCD_Clear(LCD_COLOR_WHITE);
-      LCD_SetTextColor(LCD_COLOR_MAGENTA);
-      LCD_DrawFullRect(100, 40, 40, 120);
-      LCD_FillTriangle(50, 190, 120, 160, 160, 310);
-      Delay(50);
-    }
-    if ((int16_t)Buffer[0] < -40)
-    {
-      /* Clear the LCD */
-      LCD_Clear(LCD_COLOR_WHITE);
-      LCD_SetTextColor(LCD_COLOR_RED);
-      LCD_DrawFullRect(100, 160, 40, 120);
-      LCD_FillTriangle(50, 190, 120, 160, 160, 10);
-      Delay(50);
-    }
-  }
-  else
-  {
-    if ((int16_t)Buffer[1] < -40)
-    {
-      /* Clear the LCD */
-      LCD_Clear(LCD_COLOR_WHITE);
-      LCD_SetTextColor(LCD_COLOR_GREEN);
-      LCD_DrawFullRect(120, 140, 100, 40);
-      LCD_FillTriangle(120, 120, 5, 60, 260, 160);      
-      Delay(50);
-    }
-    if ((int16_t)Buffer[1] > 40)
-    {      
-      /* Clear the LCD */ 
-      LCD_Clear(LCD_COLOR_WHITE);
-      LCD_SetTextColor(LCD_COLOR_BLUE);
-      LCD_DrawFullRect(20, 140, 100, 40);
-      LCD_FillTriangle(120, 120, 235, 60, 260, 160);
-      Delay(50);
-    } 
-  } 
-
-}
-
-	
-
-
-/**
-* @brief  Configure the Mems to gyroscope application.
-* @param  None
-* @retval 0 if I3G4250D sensor found
-*/
-static uint8_t Demo_GyroConfig(void)
-{
-    I3G4250D_InitTypeDef I3G4250D_InitStructure;
-    I3G4250D_FilterConfigTypeDef I3G4250D_FilterStructure;
-
-    // CTRL2: set up HP filter
-    I3G4250D_FilterStructure.HighPassFilter_Mode_Selection =I3G4250D_HPM_NORMAL_MODE_RES;
-    I3G4250D_FilterStructure.HighPassFilter_CutOff_Frequency = I3G4250D_HPFCF_ODR105_8HZ;
-    I3G4250D_FilterConfig(&I3G4250D_FilterStructure);
-
-    // CTRL3: ints DRDY
-    I3G4250D_INT2InterruptCmd(ENABLE);
-
-       // 
-    I3G4250D_InitStructure.Power_Mode = I3G4250D_MODE_ACTIVE;
-    I3G4250D_InitStructure.Output_DataRate = I3G4250D_OUTPUT_DATARATE_105HZ;
-    I3G4250D_InitStructure.Axes_Enable = I3G4250D_AXES_ENABLE;
-    I3G4250D_InitStructure.Band_Width = I3G4250D_ODR105_BANDWIDTH_25HZ;
-    I3G4250D_InitStructure.BlockData_Update = I3G4250D_BlockDataUpdate_Continous;
-    I3G4250D_InitStructure.Endianness = I3G4250D_BLE_LSB;
-    I3G4250D_InitStructure.Full_Scale = I3G4250D_FULLSCALE_245; 
-    I3G4250D_Init(&I3G4250D_InitStructure);
-    
-    // CTRL5: 
-    I3G4250D_FilterCmd(I3G4250D_HIGHPASSFILTER_ENABLE);
-
-    // turn on FIFO
-    I3G4250D_FIFOEnaCmd(ENABLE);
-    
-    /* Read WHOAMI register */
-    uint8_t tmpreg;
-    I3G4250D_Read(&tmpreg, I3G4250D_WHO_AM_I_ADDR, 1);
-    if (tmpreg == I_AM_I3G4250D) return 0; else return tmpreg;
-
-}
-
-#endif
-/**
-* @brief  Calculate the angular Data rate Gyroscope.
-* @param  pfData : Data out pointer
-* @retval None
-*/
-static void Demo_GyroReadAngRate (float* pfData)
-{
-  uint8_t tmpbuffer[6] ={0};
-  int16_t RawData[3] = {0};
-  uint8_t tmpreg = 0;
-  float sensitivity = 0;
-  int i =0;
-  
-  I3G4250D_Read(&tmpreg,I3G4250D_CTRL_REG4_ADDR,1);
-  
-  I3G4250D_Read(tmpbuffer,I3G4250D_OUT_X_L_ADDR,6);
-  
-  /* check in the control register 4 the data alignment (Big Endian or Little Endian)*/
-  if(!(tmpreg & 0x40))
-  {
-    for(i=0; i<3; i++)
-    {
-      RawData[i]=(int16_t)(((uint16_t)tmpbuffer[2*i+1] << 8) + tmpbuffer[2*i]);
-    }
-  }
-  else
-  {
-    for(i=0; i<3; i++)
-    {
-      RawData[i]=(int16_t)(((uint16_t)tmpbuffer[2*i] << 8) + tmpbuffer[2*i+1]);
-    }
-  }
-  
-  /* Switch the sensitivity value set in the CRTL4 */
-  switch(tmpreg & 0x30)
-  {
-  case 0x00:
-    sensitivity=L3G_Sensitivity_245dps;
-    break;
-    
-  case 0x10:
-    sensitivity=L3G_Sensitivity_500dps;
-    break;
-    
-  case 0x20:
-    sensitivity=L3G_Sensitivity_2000dps;
-    break;
-  }
-  /* divide by sensitivity */
-  for(i=0; i<3; i++)
-  {
-  pfData[i]=(float)RawData[i]/sensitivity;
-  }
-}
-
-/**
-* @brief  Calculate offset of the angular Data rate Gyroscope.
-* @param  GyroData : Data out pointer
-* @retval None
-*/
-static void Gyro_SimpleCalibration(float* GyroData)
-{
-  uint32_t BiasErrorSplNbr = 500;
-  int i = 0;
-  
-  for (i = 0; i < BiasErrorSplNbr; i++)
-  {
-    Demo_GyroReadAngRate(GyroData);
-    X_BiasError += GyroData[0];
-    Y_BiasError += GyroData[1];
-    Z_BiasError += GyroData[2];
-  }
-  /* Set bias errors */
-  X_BiasError /= BiasErrorSplNbr;
-  Y_BiasError /= BiasErrorSplNbr;
-  Z_BiasError /= BiasErrorSplNbr;
-  
-  /* Get offset value on X, Y and Z */
-  GyroData[0] = X_BiasError;
-  GyroData[1] = Y_BiasError;
-  GyroData[2] = Z_BiasError;
-}
 
 
 /**
@@ -604,13 +344,10 @@ int main(void)
     LCD_SetLayer(LCD_FOREGROUND_LAYER);
   
     /* Clear the Background Layer */ 
-    LCD_Clear(LCD_COLOR_BLACK);
+    LCD_Clear(LCD_COLOR_WHITE);
 	LCD_SetColors(LCD_COLOR_BLUE, LCD_COLOR_WHITE);
 	
     uint8_t str[15];
-    const uint8_t blank[15] = "               ";
-    
-   
    
     // BMP read
     uint32_t bmp_width, bmp_height;
@@ -624,8 +361,7 @@ int main(void)
         sprintf((char*)str, "BMP error=%d", bytes);
     }
     LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)str);
-    //Delay(500000);
-    InitActiveZone((uint8_t*)frame_cur, (uint8_t*)frame_bmp);
+    InitActiveZone((uint8_t*)frame_cur, (uint8_t*)frame_bmp, BACKGR_COLOR);
    
    
     // > 10 ms since poweron
@@ -658,7 +394,7 @@ int main(void)
     {}
 
         
-	LCD_Clear(LCD_COLOR_BLACK);
+	LCD_Clear(LCD_COLOR_WHITE);
 
         
     LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)"Calibration...");
@@ -677,52 +413,43 @@ int main(void)
         EXTI_ClearITPendingBit(I3G4250D_SPI_INT2_EXTI_LINE);      
     }
 
-        
-       
-        
-    
-    float phi = 0.0;
 
-    // rewind phi
 	phi_integrated = 0.0;
     
+#ifdef STABILCD_LCD_VERBOSE            
     uint32_t systick_prev = 0;
     uint32_t delta_frame_usec = 0;
-
-
+#endif
+    
     while (1)
     {
-        
-                
+        // redraw as fast as possible
         //if (lcd_period_flag)
         {
 
+#ifdef STABILCD_LCD_VERBOSE            
             delta_frame_usec = systick_cnt-systick_prev;
             systick_prev = systick_cnt;
-
-                
+#endif
+            
+#ifdef STABILCD_LED_BLINKS        
             // tgl LED4
-            //STM_EVAL_LEDToggle(LED4);
+            STM_EVAL_LEDToggle(LED4);
+#endif            
             
           
             // rotate
-            RotateActiveZone((uint8_t*)frame_new, (uint8_t*)frame_cur, -phi_integrated*MATH_PI/180.0, BACKGR_COLOR);
+            RotateActiveZone((uint8_t*)frame_new, (uint8_t*)frame_cur, -phi_integrated*MATH_PI_DIV_180, BACKGR_COLOR);
 
             // redraw
             DrawActiveZone((uint8_t*)frame_new, LCD_SIZE_PIXEL_WIDTH/2, LCD_SIZE_PIXEL_HEIGHT/2, BACKGR_COLOR);
-
-
-            //LCD_Clear(LCD_COLOR_BLACK);
 
             if (calib_flag)
             {
                 LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)"Calibration...");
             }
-            
-            /*
-            sprintf((char*)str, "F=%04d", frame_cnt);
-            LCD_DisplayStringLine(LCD_LINE_1, (uint8_t*)str);
-            */
+#ifdef STABILCD_LCD_VERBOSE            
+           
             /*
             sprintf((char*)str, "omega=%5.1f", omega_z);
             LCD_DisplayStringLine(LCD_LINE_1, (uint8_t*)str);
@@ -750,28 +477,10 @@ int main(void)
             sprintf((char*)str, "deltaT=%5d", delta_time_usec/1000);
             LCD_DisplayStringLine(LCD_LINE_7, (uint8_t*)str);
             */
-
+#endif
     
     
-            // integrate calc phi
-            //phi += StabilPhiCalc();
-            
-        
-            // reassign
-            //ReassignActiveZone((uint8_t*)frame_cur, (uint8_t*)frame_new);
-            
-            /*
-			frame_cnt++;
-			if (frame_cnt == LCD_ILI9341_FPS_INT + 1) 
-            {
-                frame_cnt = 0;
-            }   
-			lcd_period_flag = 0;
-            */
 		}
-        
-        
-
     }
 }
 

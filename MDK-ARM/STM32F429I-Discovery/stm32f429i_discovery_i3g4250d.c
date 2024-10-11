@@ -85,6 +85,7 @@ static uint8_t I3G4250D_SendByte(uint8_t byte);
 static void I3G4250D_LowLevel_Init(void);
 static void I3G4250D_EXTI_Config(void);
 
+#if 0
 /**
   * @brief  Inserts a delay time.
   * @param  nCount: specifies the delay time length.
@@ -97,7 +98,7 @@ static void delay(__IO uint32_t nCount)
   {
   }
 }
-
+#endif
 
 /**
   * @}

@@ -42,13 +42,8 @@
 /* Private typedef -----------------------------------------------------------*/
 
 /* Private define ------------------------------------------------------------*/
-//#define STABILCD_GYRO_TMPLY_VECTORS
 
 /* Private macro -------------------------------------------------------------*/
-#define MACHEPS_FLOAT   1e-06
-#define MAX(x,y)    (x < y) ? y : x
-#define MIN(x,y)    (x < y) ? x : y
-
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -56,7 +51,6 @@ volatile uint32_t systick_cnt = 0;
 uint32_t time_prev_usec = 0;
 
 extern uint8_t lcd_period_flag;
-extern uint8_t exti_int2_flag;
 extern uint8_t calib_flag;
 extern float phi_integrated;
 extern float omega_z;
@@ -78,13 +72,6 @@ uint32_t tmp_cnt = 0;
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
-
-static float sgn(float x)
-{
-    if (x > MACHEPS_FLOAT) return 1.0F;
-    if (x < -MACHEPS_FLOAT) return -1.0F;
-}
-
 
 
 /******************************************************************************/
@@ -190,6 +177,7 @@ void SysTick_Handler(void)
     systick_cnt++;
     if (systick_cnt % LCD_ILI9341_PERIOD_USEC)	
     {
+        // tmply
         lcd_period_flag = 1;
 	}
 			
@@ -213,11 +201,11 @@ void EXTI2_IRQHandler(void)
     I3G4250D_INT2InterruptCmd(DISABLE);
     if(EXTI_GetITStatus(I3G4250D_SPI_INT2_EXTI_LINE) != RESET)
     {
+#ifdef STABILCD_LED_BLINKS        
         // tgl LED3
         STM_EVAL_LEDToggle(LED3);
+#endif        
         EXTI_ClearITPendingBit(I3G4250D_SPI_INT2_EXTI_LINE);   
-        exti_int2_flag = 1;
-
     }
     
     // used after calib completion
@@ -275,7 +263,7 @@ void EXTI2_IRQHandler(void)
         // clr it
         calib_flag = 0; 
         // integrate
-        phi_integrated += omega_z*(float)(delta_time_usec/1000)*1.0e-03;  
+        phi_integrated += (omega_z/1000.0F)*(float)(delta_time_usec/1000);  
     }
     if (calib_flag)
     {
@@ -293,9 +281,8 @@ void EXTI2_IRQHandler(void)
     // reset FIFO: to FIFO mode again
     I3G4250D_INT2InterruptCmd(ENABLE);
     I3G4250D_SetFIFOMode_WMLevel(I3G4250D_FIFO_MODE_FIFO, I3G4250D_FIFO_WM_LEVEL-1);
-
-    exti_int2_flag = 0;
 }
+
 
 
 /**
