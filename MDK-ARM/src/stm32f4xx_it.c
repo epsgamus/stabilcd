@@ -2,8 +2,9 @@
   ******************************************************************************
   * @file    MEMS_Example/stm32f4xx_it.c 
   * @author  MCD Application Team
-  * @version V1.0.1
-  * @date    11-November-2013
+  * @changed eg
+  * @version 
+  * @date    
   * @brief   Main Interrupt Service Routines.
   *          This file provides template for all exceptions handler and 
   *          peripherals interrupt service routine.
@@ -39,21 +40,17 @@
   */
 
 /* Private typedef -----------------------------------------------------------*/
-/* Private define ------------------------------------------------------------*/
-/* Private macro -------------------------------------------------------------*/
-#define MACHEPS_FLOAT   1e-06
-#define MAX(x,y)    (x < y) ? y : x
-#define MIN(x,y)    (x < y) ? x : y
 
+/* Private define ------------------------------------------------------------*/
+
+/* Private macro -------------------------------------------------------------*/
 
 /* Private variables ---------------------------------------------------------*/
 
-uint8_t pBuffer;
 volatile uint32_t systick_cnt = 0;
 uint32_t time_prev_usec = 0;
 
 extern uint8_t lcd_period_flag;
-extern uint8_t exti_int2_flag;
 extern uint8_t calib_flag;
 extern float phi_integrated;
 extern float omega_z;
@@ -66,20 +63,15 @@ float omega_z_bias = 0.0;
 float calib_sum = 0.0;
 uint32_t calib_cnt = 0;
 
-volatile float tmp_calib[I3G4250D_CALIB_SAMPLES];
+#ifdef STABILCD_GYRO_TMPLY_VECTORS
+float tmp_calib[I3G4250D_CALIB_SAMPLES];
 int16_t tmp_calib_int[I3G4250D_CALIB_SAMPLES];
 uint32_t tmp_cnt = 0;
+#endif
 
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
-
-static float sgn(float x)
-{
-    if (x > MACHEPS_FLOAT) return 1.0F;
-    if (x < -MACHEPS_FLOAT) return -1.0F;
-}
-
 
 
 /******************************************************************************/
@@ -185,6 +177,7 @@ void SysTick_Handler(void)
     systick_cnt++;
     if (systick_cnt % LCD_ILI9341_PERIOD_USEC)	
     {
+        // tmply
         lcd_period_flag = 1;
 	}
 			
@@ -208,12 +201,14 @@ void EXTI2_IRQHandler(void)
     I3G4250D_INT2InterruptCmd(DISABLE);
     if(EXTI_GetITStatus(I3G4250D_SPI_INT2_EXTI_LINE) != RESET)
     {
+#ifdef STABILCD_LED_BLINKS        
         // tgl LED3
         STM_EVAL_LEDToggle(LED3);
+#endif        
         EXTI_ClearITPendingBit(I3G4250D_SPI_INT2_EXTI_LINE);   
-        exti_int2_flag = 1;
     }
     
+    // used after calib completion
     delta_time_usec = systick_cnt - time_prev_usec;
     time_prev_usec = systick_cnt;
    
@@ -245,46 +240,20 @@ void EXTI2_IRQHandler(void)
     // reset FIFO: to BYPASS mode
     I3G4250D_SetFIFOMode_WMLevel(I3G4250D_FIFO_MODE_BYPASS, 0);
 
-    int16_t omega_raw = 0;
-    
-#ifdef  I3G4250D_CALIB_PREFILTER_MEDIAN    
-    // median (todo)
-    /*
-    uint8_t max_idx = 255;
-    int16_t max = -32767;
-    int16_t tmp[I3G4250D_FIFO_WM_LEVEL];
-    for (uint8_t i=0; i<I3G4250D_FIFO_WM_LEVEL; i++)
-    {
-        tmp[i] = (int16_t)(((uint16_t)tmpbuffer[5+6*i] << 8) | (uint16_t)tmpbuffer[4+6*i]);
-        if (tmp[i] >= max)
-        {
-            max = tmp[i];
-            max_idx = i;
-        }
-    }
-    omega_raw = -32767;
-    for (uint8_t i=0; (i<I3G4250D_FIFO_WM_LEVEL)&&(i!=max_idx); i++)
-    {
-        if (tmp[i] >= omega_raw)
-        {
-            omega_raw = tmp[i];
-        }
-    }
-    */
-#else     
-    // mean
+    // int rate mean by triples
     int32_t sum = 0;
     for (uint8_t i=0; i<I3G4250D_FIFO_WM_LEVEL; i++)
     {
         int16_t tmp = (int16_t)(((uint16_t)tmpbuffer[5+6*i] << 8) | (uint16_t)tmpbuffer[4+6*i]);
         sum += (int32_t)tmp;
+#ifdef STABILCD_GYRO_TMPLY_VECTORS        
         // tmply
-        //if (tmp_cnt < I3G4250D_CALIB_SAMPLES) tmp_calib_int[tmp_cnt++] = tmp;
-         
+        if (tmp_cnt < I3G4250D_CALIB_SAMPLES) tmp_calib_int[tmp_cnt++] = tmp;
+#endif
     }
-    omega_raw = (int16_t)(sum/I3G4250D_FIFO_WM_LEVEL); 
-#endif    
-    
+    int32_t omega_raw = (int16_t)(sum/I3G4250D_FIFO_WM_LEVEL); 
+
+    // float rate
     omega_z = (float)omega_raw/L3G_Sensitivity_245dps - omega_z_bias;
     
     if (calib_cnt == I3G4250D_CALIB_SAMPLES) 
@@ -294,28 +263,26 @@ void EXTI2_IRQHandler(void)
         // clr it
         calib_flag = 0; 
         // integrate
-        phi_integrated += omega_z*(float)(delta_time_usec/1000)*1.0e-03;  
+        phi_integrated += (omega_z/1000.0F)*(float)(delta_time_usec/1000);  
     }
     if (calib_flag)
     {
         if (calib_cnt < I3G4250D_CALIB_SAMPLES)
         {
             calib_sum += omega_z;
+#ifdef STABILCD_GYRO_TMPLY_VECTORS
             // tmply store
-            // tmp_calib[calib_cnt] = omega_z;
+            tmp_calib[calib_cnt] = omega_z;
+#endif
             calib_cnt++;
-           
         }
     }   
-    
-    
     
     // reset FIFO: to FIFO mode again
     I3G4250D_INT2InterruptCmd(ENABLE);
     I3G4250D_SetFIFOMode_WMLevel(I3G4250D_FIFO_MODE_FIFO, I3G4250D_FIFO_WM_LEVEL-1);
-
-    exti_int2_flag = 0;
 }
+
 
 
 /**

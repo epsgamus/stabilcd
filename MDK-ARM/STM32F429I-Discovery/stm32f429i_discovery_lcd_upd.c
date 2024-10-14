@@ -1,9 +1,10 @@
 /**
   ******************************************************************************
   * @file    stm32f429i_discovery_lcd_upd.c
-  * @author  MCD Application Team, YE
-  * @version V1.0.3, 
-  * @date    05-March-2021, Apr 2023
+  * @author  MCD Application Team
+  * @changed eg
+  * @version 
+  * @date    
   * @brief   This file includes the LCD driver for ILI9341 Liquid Crystal 
   *          Display Modules of STM32F429I-DISCO kit (MB1075).
   ******************************************************************************
@@ -111,10 +112,6 @@ static void delay(__IO uint32_t nCount);
 static void PutPixel(int16_t x, int16_t y);
 static void LCD_PolyLineRelativeClosed(pPoint Points, uint16_t PointCount, uint16_t Closed);
 static void LCD_AF_GPIOConfig(void);
-
-
-//extern uint32_t frame_cnt;
-//extern uint8_t frame_cur[LCD_SIZE_PIXEL_WIDTH*LCD_SIZE_PIXEL_HEIGHT]; 
 
 /**
   * @}
@@ -1031,78 +1028,7 @@ void LCD_DrawMonoPict(const uint32_t *Pict)
 }
 
 
-#if 0
-//////////
-/**
-  * @brief  Refreshes a bitmap picture 
-  * @param  
-  * @retval None
-  */
-void LCD_Refresh_BMP()
-{
-  uint32_t Address;
- 	uint32_t i, j, src_pixel;
-	uint32_t RGB565_pixel;
-	uint32_t R_comp, B_comp, G_comp;
- 
-//  Address = CurrentFrameBuffer;
 
-#if 1	
-  if (CurrentLayer == LCD_BACKGROUND_LAYER)
-  {
-    /* reconfigure layer size in accordance with the picture */
-    LTDC_LayerSize(LTDC_Layer1, LCD_SIZE_PIXEL_WIDTH, LCD_SIZE_PIXEL_HEIGHT);
-    LTDC_ReloadConfig(LTDC_VBReload);
-
-		// assume 24 BPP
-		LTDC_LayerPixelFormat(LTDC_Layer1, LTDC_Pixelformat_RGB565);
-		LTDC_ReloadConfig(LTDC_VBReload);
-  }
-  else
-  {
-    /* reconfigure layer size in accordance with the picture */
-    LTDC_LayerSize(LTDC_Layer2, LCD_SIZE_PIXEL_WIDTH, LCD_SIZE_PIXEL_HEIGHT);
-    LTDC_ReloadConfig(LTDC_VBReload); 
- 
-		// assume 24 BPP
-		LTDC_LayerPixelFormat(LTDC_Layer1, LTDC_Pixelformat_RGB565);
-		LTDC_ReloadConfig(LTDC_VBReload);
-  }
-#endif
-	
-
- 
-  for (i=0; i<LCD_SIZE_PIXEL_HEIGHT; i++)
-	{
-		for (j=0; j<LCD_SIZE_PIXEL_WIDTH; j++)
-		{
-			Address = CurrentFrameBuffer + i*LCD_SIZE_PIXEL_WIDTH*2 + j*2;
-			src_pixel = (frame_cur[i*LCD_SIZE_PIXEL_WIDTH + j] >> 3) /* + frame_cnt & 0x1F*/;
-			
-			// if (j == frame_cnt) src_pixel = 0;
-			R_comp = src_pixel & 0x1F;
-			G_comp = (src_pixel << 1) & 0x3F;
-			B_comp = src_pixel & 0x1F;
-			RGB565_pixel = (R_comp << 11) | (G_comp << 5) | B_comp;
-			
-			*(__IO uint8_t*) (Address) = (uint8_t)(RGB565_pixel & 0xFF);
-			*(__IO uint8_t*) (Address+1) = (uint8_t)((RGB565_pixel >> 8) & 0xFF);
-			
-		}
-	}
-
-/*
-	
-  Red_Value = (0xF800 & CurrentTextColor) >> 11;
-  Blue_Value = 0x001F & CurrentTextColor;
-  Green_Value = (0x07E0 & CurrentTextColor) >> 5;
-	
-	
-	*/	
-	
-	
-}
-#endif
 
 /**
   * @brief  Displays a bitmap picture loaded in the internal Flash.

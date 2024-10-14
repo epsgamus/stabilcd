@@ -2,8 +2,9 @@
   ******************************************************************************
   * @file    MEMS_Example/main.h 
   * @author  MCD Application Team
-  * @version V1.0.1
-  * @date    11-November-2013
+  * @changed eg
+  * @version 
+  * @date    
   * @brief   Header for main.c module
   ******************************************************************************
   * @attention
@@ -39,6 +40,15 @@
 
 /* Exported constants --------------------------------------------------------*/
 
+// uncmt to use scratch vecs
+//#define STABILCD_GYRO_TMPLY_VECTORS
+
+// uncmt to blink with leds
+//#define STABILCD_LED_BLINKS
+
+// uncmt to echo msgs to lcd
+//#define STABILCD_LCD_VERBOSE
+
 // gyro period, ODR=95HZ
 #define GYRO_ODR95_PERIOD_USEC		10526ul
 
@@ -61,8 +71,10 @@
 #define BACKGR_COLOR    255
 
 // math
+#define MACHEPS_FLOAT   1e-06
 #define MATH_PI	3.141592653589793F
 #define NORM_COEFF      2.0F/150.0F
+#define MATH_PI_DIV_180 MATH_PI/180.0F
 #define RECIP_NORM_COEFF      75.0F
 #define BLOOMING_EXCEN_MARGIN  0.1F
 #define BLOOMING_LO_THRESH  0.5F - BLOOMING_EXCEN_MARGIN
@@ -77,21 +89,17 @@ typedef struct
 
 
 /* Exported macro ------------------------------------------------------------*/
+#define ABS(x)                     (x < 0) ? (-x) : x
+#define MAX(x,y)    (x < y) ? y : x
+#define MIN(x,y)    (x < y) ? x : y
+
+
 /* Exported functions ------------------------------------------------------- */
 void Delay(__IO uint32_t nTime);
 void TimingDelay_Decrement(void);
-//void LCD_DrawActiveZone(uint16_t horz_pos, uint16_t vert_pos, uint8_t back_color);
-//uint32_t LCD_ReadBMP(uint32_t BmpAddress, uint8_t *dst_image, uint32_t *width, uint32_t *height);
 
 static inline vec_2_d VectorSimpleRotation(vec_2_d src, float cos_phi, float sin_phi)
 {
-    /*
-    float x = (src.i1 - ACTIVE_HEIGHT/2)*NORM_COEFF;
-    float y = (src.i2 - ACTIVE_WIDTH/2)*NORM_COEFF;
-    vec_2_d dst;
-    dst.i1 = RECIP_NORM_COEFF*(cos_phi*x - sin_phi*y) + ACTIVE_HEIGHT/2;
-    dst.i2 = RECIP_NORM_COEFF*(sin_phi*x + cos_phi*y) + ACTIVE_WIDTH/2;
-    */
     float x = (src.i1 - ACTIVE_HEIGHT/2);
     float y = (src.i2 - ACTIVE_WIDTH/2);
     vec_2_d dst;
