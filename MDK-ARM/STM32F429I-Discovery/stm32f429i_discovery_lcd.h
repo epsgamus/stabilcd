@@ -287,8 +287,6 @@ void     LCD_DrawEllipse(int Xpos, int Ypos, int Radius, int Radius2);
 void     LCD_DrawFullEllipse(int Xpos, int Ypos, int Radius, int Radius2);
 void     LCD_DrawMonoPict(const uint32_t *Pict);
 void     LCD_WriteBMP(uint32_t BmpAddress);
-//
-//void		 LCD_Refresh_BMP(void);
 void     LCD_DrawUniLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2);
 void     LCD_DrawFullRect(uint16_t Xpos, uint16_t Ypos, uint16_t Width, uint16_t Height);
 void     LCD_DrawFullCircle(uint16_t Xpos, uint16_t Ypos, uint16_t Radius);

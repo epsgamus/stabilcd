@@ -52,10 +52,25 @@
 // gyro period, ODR=95HZ
 #define GYRO_ODR95_PERIOD_USEC		10526ul
 
-// 278*327@6Mhz
+/*
+// 278*327@6Mhz 
+// frame portions for specific fps rate
+// total 278
+#define LCD_ILI9341_GYRO_HSYNC		9
+#define LCD_ILI9341_GYRO_HBP			20
+#define LCD_ILI9341_GYRO_HADR			240
+#define LCD_ILI9341_GYRO_HFP			9
+// total 327
+#define LCD_ILI9341_GYRO_VSYNC		1
+#define LCD_ILI9341_GYRO_VBP			2
+#define LCD_ILI9341_GYRO_VADR			320
+#define LCD_ILI9341_GYRO_VFP			4
+
 #define LCD_ILI9341_FPS_MAX					66.0022440762985941f
 #define LCD_ILI9341_FPS_INT						33
 #define LCD_ILI9341_PERIOD_USEC_MIN		15151ul
+*/
+
 #define LCD_ILI9341_PERIOD_USEC		30000ul
 #define IMG_BMP_ADDR    0x08100000UL
 
@@ -63,7 +78,7 @@
 #define  BMP_WIDTH    100
 #define  BMP_HEIGHT   100
 
-// rotatable sizes, BMP*sqrt(2)
+// rotatable sizes, > BMP*sqrt(2)
 #define  ACTIVE_WIDTH    150
 #define  ACTIVE_HEIGHT   150
 

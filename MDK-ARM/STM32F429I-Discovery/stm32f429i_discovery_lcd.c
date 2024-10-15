@@ -1,9 +1,10 @@
 /**
   ******************************************************************************
-  * @file    stm32f429i_discovery_lcd.c
+  * @file    stm32f429i_discovery_lcd_upd.c
   * @author  MCD Application Team
-  * @version V1.0.3
-  * @date    05-March-2021
+  * @changed eg
+  * @version 
+  * @date    
   * @brief   This file includes the LCD driver for ILI9341 Liquid Crystal 
   *          Display Modules of STM32F429I-DISCO kit (MB1075).
   ******************************************************************************
@@ -28,12 +29,13 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f429i_discovery_lcd.h"
-//#include "../fonts/fonts.c"
+//#include "fonts.c"
 
 
 /** @addtogroup Utilities
   * @{
   */ 
+
 
 /** @addtogroup STM32F4_DISCOVERY
   * @{
@@ -286,7 +288,8 @@ void LCD_Init(void)
   while(RCC_GetFlagStatus(RCC_FLAG_PLLSAIRDY) == RESET)
   {
   }
-  
+
+#if 1  
   /* Timing configuration */  
   /* Configure horizontal synchronization width */     
   LTDC_InitStruct.LTDC_HorizontalSync = 9;
@@ -304,9 +307,31 @@ void LCD_Init(void)
   LTDC_InitStruct.LTDC_TotalWidth = 279; 
   /* Configure total height */
   LTDC_InitStruct.LTDC_TotalHeigh = 327;
-  
+#else
+  /* Timing configuration */  
+  /* Configure horizontal synchronization width */     
+  LTDC_InitStruct.LTDC_HorizontalSync = LCD_ILI9341_GYRO_HSYNC;
+  /* Configure vertical synchronization height */
+  LTDC_InitStruct.LTDC_VerticalSync = LCD_ILI9341_GYRO_VSYNC;
+  /* Configure accumulated horizontal back porch */
+  LTDC_InitStruct.LTDC_AccumulatedHBP = LCD_ILI9341_GYRO_HSYNC + LCD_ILI9341_GYRO_HBP; 
+  /* Configure accumulated vertical back porch */
+  LTDC_InitStruct.LTDC_AccumulatedVBP = LCD_ILI9341_GYRO_VSYNC + LCD_ILI9341_GYRO_VBP;  
+  /* Configure accumulated active width */  
+  LTDC_InitStruct.LTDC_AccumulatedActiveW = LCD_ILI9341_GYRO_HADR + LCD_ILI9341_GYRO_HSYNC + LCD_ILI9341_GYRO_HBP;
+  /* Configure accumulated active height */
+  LTDC_InitStruct.LTDC_AccumulatedActiveH = LCD_ILI9341_GYRO_VADR + LCD_ILI9341_GYRO_VSYNC + LCD_ILI9341_GYRO_VBP;
+  /* Configure total width */
+  LTDC_InitStruct.LTDC_TotalWidth = LCD_ILI9341_GYRO_HADR + LCD_ILI9341_GYRO_HSYNC + LCD_ILI9341_GYRO_HBP + LCD_ILI9341_GYRO_HFP; 
+  /* Configure total height */
+  LTDC_InitStruct.LTDC_TotalHeigh = LCD_ILI9341_GYRO_VADR + LCD_ILI9341_GYRO_VSYNC + LCD_ILI9341_GYRO_VBP + LCD_ILI9341_GYRO_VFP;
+#endif  
+
   LTDC_Init(&LTDC_InitStruct);
 }  
+
+
+
 
 /**
   * @brief  Initializes the LCD Layers.
@@ -322,12 +347,20 @@ void LCD_LayerInit(void)
   Horizontal start = horizontal synchronization + Horizontal back porch = 30 
   Horizontal stop = Horizontal start + window width -1 = 30 + 240 -1
   Vertical start   = vertical synchronization + vertical back porch     = 4
-  Vertical stop   = Vertical start + window height -1  = 4 + 320 -1      */      
+  Vertical stop   = Vertical start + window height -1  = 4 + 320 -1      */  
+	
+#if 1	
   LTDC_Layer_InitStruct.LTDC_HorizontalStart = 30;
   LTDC_Layer_InitStruct.LTDC_HorizontalStop = (LCD_SIZE_PIXEL_WIDTH + 30 - 1); 
   LTDC_Layer_InitStruct.LTDC_VerticalStart = 4;
   LTDC_Layer_InitStruct.LTDC_VerticalStop = (LCD_SIZE_PIXEL_HEIGHT + 4 - 1);
-  
+#else
+  LTDC_Layer_InitStruct.LTDC_HorizontalStart = LCD_ILI9341_GYRO_HSYNC + LCD_ILI9341_GYRO_HBP + 1;
+  LTDC_Layer_InitStruct.LTDC_HorizontalStop = (LCD_SIZE_PIXEL_WIDTH + LCD_ILI9341_GYRO_HSYNC + LCD_ILI9341_GYRO_HBP); 
+  LTDC_Layer_InitStruct.LTDC_VerticalStart = LCD_ILI9341_GYRO_VSYNC + LCD_ILI9341_GYRO_VBP + 1;
+  LTDC_Layer_InitStruct.LTDC_VerticalStop = (LCD_SIZE_PIXEL_HEIGHT + LCD_ILI9341_GYRO_VSYNC + LCD_ILI9341_GYRO_VBP);
+#endif
+
   /* Pixel Format configuration*/
   LTDC_Layer_InitStruct.LTDC_PixelFormat = LTDC_Pixelformat_RGB565;
   /* Alpha constant (255 totally opaque) */
@@ -968,6 +1001,9 @@ void LCD_DrawMonoPict(const uint32_t *Pict)
     }
   }
 }
+
+
+
 
 /**
   * @brief  Displays a bitmap picture loaded in the internal Flash.
@@ -1802,7 +1838,7 @@ void LCD_SPIConfig(void)
     /* SPI baudrate is set to 5.6 MHz (PCLK2/SPI_BaudRatePrescaler = 90/16 = 5.625 MHz) 
        to verify these constraints:
           - ILI9341 LCD SPI interface max baudrate is 10MHz for write and 6.66MHz for read
-          - l3gd20 SPI interface max baudrate is 10MHz for write/read
+          - I3G4250D SPI interface max baudrate is 10MHz for write/read
           - PCLK2 frequency is set to 90 MHz 
        */
     SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_16;
@@ -1810,7 +1846,7 @@ void LCD_SPIConfig(void)
     SPI_InitStructure.SPI_CRCPolynomial = 7;
     SPI_Init(LCD_SPI, &SPI_InitStructure);
 
-    /* Enable L3GD20_SPI  */
+    /* Enable I3G4250D_SPI  */
     SPI_Cmd(LCD_SPI, ENABLE);
   }
 }
