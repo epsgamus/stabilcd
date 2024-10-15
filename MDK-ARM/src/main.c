@@ -158,7 +158,6 @@ static void RotateActiveZone(uint8_t *dst_image, uint8_t *src_image, float phi, 
 }
 
 
-
 /**
 * @brief  Read BMP
 * @param  source BMP-file address, dst image address, image sizes 
