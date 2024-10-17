@@ -34,7 +34,11 @@ set(cpu_PARAMS
 set(sources_SRCS)
 
 # Include directories for all compilers
-set(include_DIRS)
+set(include_DIRS
+${CMAKE_CURRENT_SOURCE_DIR}/src
+${CMAKE_CURRENT_SOURCE_DIR}/CMSIS
+${CMAKE_CURRENT_SOURCE_DIR}/STM32F429I-Discovery
+${CMAKE_CURRENT_SOURCE_DIR}/STM32F4xx_StdPeriph_Driver/inc)
 
 # Include directories for each compiler
 set(include_c_DIRS)
@@ -42,7 +46,12 @@ set(include_cxx_DIRS)
 set(include_asm_DIRS)
 
 # Symbols definition for all compilers
-set(symbols_SYMB)
+set(symbols_SYMB
+USE_STDPERIPH_DRIVER
+STM32F429_439xx
+USE_STM32F429I_DISCO
+__FPU_USED
+)
 
 # Symbols definition for each compiler
 set(symbols_c_SYMB)
