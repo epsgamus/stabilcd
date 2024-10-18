@@ -307,9 +307,6 @@ void I3G4250D_INT2InterruptCmd(uint8_t InterruptState)
 }
 
 
-
-
-
 /**
   * @brief  Set High Pass Filter Modality
   * @param  I3G4250D_FilterStruct: pointer to a I3G4250D_FilterConfigTypeDef structure 

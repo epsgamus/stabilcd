@@ -25,32 +25,64 @@ set(CMAKE_CXX_EXTENSIONS ON)
 
 # Core MCU flags, CPU type, instruction set and FPU setup
 set(cpu_PARAMS 
+    -mthumb
     # Other parameters
-    # -mthumb
     # -mcpu, -mfloat, -mfloat-abi, ...
+    -mcpu=cortex-m4
+	-mfpu=fpv4-sp-d16
+	-mfloat-abi=hard
 )
 
+
 # Sources
-set(sources_SRCS)
+set(sources_SRCS
+    ${CMAKE_CURRENT_SOURCE_DIR}/Startup/startup_stm32f429zitx.s
+    ${CMAKE_CURRENT_SOURCE_DIR}/STM32F429I-Discovery/stm32f429i_discovery.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/STM32F429I-Discovery/stm32f429i_discovery_i3g4250d.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/STM32F429I-Discovery/stm32f429i_discovery_lcd.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/STM32F429I-Discovery/stm32f429i_discovery_sdram.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_dma2d.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_exti.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_fmc.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_gpio.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_i2c.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_ltdc.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_rcc.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/STM32F4xx_StdPeriph_Driver/src/misc.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_dma.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_syscfg.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_spi.c
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/Src/main.c
+	${CMAKE_CURRENT_SOURCE_DIR}/Src/fonts.c
+	${CMAKE_CURRENT_SOURCE_DIR}/Src/stm32f4xx_it.c
+	${CMAKE_CURRENT_SOURCE_DIR}/Src/system_stm32f4xx.c
+	${CMAKE_CURRENT_SOURCE_DIR}/Src/bmp.s
+	${CMAKE_CURRENT_SOURCE_DIR}/Src/syscall.c
+	${CMAKE_CURRENT_SOURCE_DIR}/Src/sysmem.c
+)
 
 # Include directories for all compilers
-set(include_DIRS
-${CMAKE_CURRENT_SOURCE_DIR}/src
-${CMAKE_CURRENT_SOURCE_DIR}/CMSIS
-${CMAKE_CURRENT_SOURCE_DIR}/STM32F429I-Discovery
-${CMAKE_CURRENT_SOURCE_DIR}/STM32F4xx_StdPeriph_Driver/inc)
+set(include_DIRS)
 
 # Include directories for each compiler
-set(include_c_DIRS)
+set(include_c_DIRS
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/CMSIS
+    ${CMAKE_CURRENT_SOURCE_DIR}/STM32F429I-Discovery
+    ${CMAKE_CURRENT_SOURCE_DIR}/STM32F4xx_StdPeriph_Driver/inc
+)
+
 set(include_cxx_DIRS)
 set(include_asm_DIRS)
 
+
 # Symbols definition for all compilers
 set(symbols_SYMB
-USE_STDPERIPH_DRIVER
-STM32F429_439xx
-USE_STM32F429I_DISCO
-__FPU_USED
+    USE_STDPERIPH_DRIVER
+    STM32F429_439xx
+    USE_STM32F429I_DISCO
+    __FPU_USED
 )
 
 # Symbols definition for each compiler
@@ -60,10 +92,14 @@ set(symbols_asm_SYMB)
 
 # Link directories and names of libraries
 set(link_DIRS)
+
 set(link_LIBS)
 
 # Linker script
-set(linker_script_SRC)
+set(linker_script_SRC
+    ${CMAKE_CURRENT_SOURCE_DIR}/stm32f429zitx_FLASH.ld
+)
+
 
 # Compiler options
 set(compiler_OPTS)
@@ -74,7 +110,7 @@ set(linker_OPTS)
 # Now call generated cmake
 # This will add script generated
 # information to the project
-include("cmake/vscode_generated.cmake")
+#include("cmake/vscode_generated.cmake")
 
 # Link directories setup
 # Must be before executable is added

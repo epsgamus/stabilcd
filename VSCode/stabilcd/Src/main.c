@@ -232,7 +232,7 @@ static uint32_t ReadBMP(uint32_t BmpAddress, uint8_t *bmp_image, uint32_t *width
 static void DrawActiveZone(uint8_t *img, uint16_t horz_pos, uint16_t vert_pos, uint8_t back_color)
 {
     uint32_t Address;
- 	uint32_t i, j, src_pixel;
+ 	uint32_t src_pixel;
 	uint32_t RGB565_pixel;
 	uint32_t R_comp, B_comp, G_comp;
 
@@ -244,9 +244,9 @@ static void DrawActiveZone(uint8_t *img, uint16_t horz_pos, uint16_t vert_pos, u
 	LTDC_LayerPixelFormat(LTDC_Layer1, LTDC_Pixelformat_RGB565);
 	LTDC_ReloadConfig(LTDC_VBReload);
   
-    for (i=0; i<LCD_SIZE_PIXEL_HEIGHT; i++)
+    for (int32_t i=0; i<LCD_SIZE_PIXEL_HEIGHT; i++)
 	{
-		for (j=0; j<LCD_SIZE_PIXEL_WIDTH; j++)
+		for (int32_t j=0; j<LCD_SIZE_PIXEL_WIDTH; j++)
 		{
 			Address = LCD_FRAME_BUFFER + BUFFER_OFFSET + i*LCD_SIZE_PIXEL_WIDTH*2 + j*2;
             
@@ -353,11 +353,11 @@ int main(void)
     uint32_t bytes = ReadBMP(IMG_BMP_ADDR, (uint8_t*)frame_bmp, &bmp_width, &bmp_height);
     if (bytes == bmp_width*bmp_height)
     {
-        sprintf((char*)str, "BMP %dx%d Ok", bmp_width, bmp_height);
+        sprintf((char*)str, "BMP %ldx%ld Ok", bmp_width, bmp_height);
     }
     else
     {
-        sprintf((char*)str, "BMP error=%d", bytes);
+        sprintf((char*)str, "BMP error=%ld", bytes);
     }
     LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)str);
     InitActiveZone((uint8_t*)frame_cur, (uint8_t*)frame_bmp, BACKGR_COLOR);
