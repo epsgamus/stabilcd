@@ -1,6 +1,8 @@
 name: build
 on:
   push:
+#    branches:
+#      - master
     paths:
       - "**.c"
       - "**.h"
@@ -8,35 +10,22 @@ on:
       - ".github/workflows/build.yaml"
       - "*.txt"
 
-env:
-
 jobs:
   build:
-    name: build
+    name: stabilcd_build
     runs-on: ubuntu-latest
-#    container:
-#      image: nordicplayground/nrfconnect-sdk:v2.4-branch
-
-    strategy:
-      fail-fast: false
-#      matrix:
-#        board: [gst340_v1, 5340dk]
-#        config: [prod, debug, selftest, benchmark_cpu, benchmark_spi]
-
     steps:
-      - uses: actions/checkout@v1
-
-       - name: Toolchains
-#        run: nrfutil toolchain-manager install --ncs-version v2.4.1 --install-dir /workdir/zephyr
- #       run: nrfutil toolchain-manager search
+      - name: checkout
+      - uses: actions/checkout@v3.1.0
         shell: bash {0}
 
-      - name: Build
-  #      run: ZEPHYR_SDK_INSTALL_DIR=/root/ncs/toolchains/1f9b40e71a/opt/zephyr-sdk nrfutil toolchain-manager launch -- west build -p always -b gst340_v1_cpuapp --build-dir build -- -DGST_CONFIG_${{ steps.string.outputs.uppercase }}=1 -DCONF_FILE=prj_${{ matrix.config }}.conf -DDTC_OVERLAY_FILE=ovl_${{ matrix.config }}_${{ matrix.board }}.overlay -DBOARD_ROOT=./
+      - name: cmake probe
+        run: cmake -?
         shell: bash {0}
-           
-      - uses: actions/upload-artifact@v3
-        with:
+
+ #     - name: Upload     
+ #     - uses: actions/upload-artifact@v3.1.0
+ #       with:
  #         name: ${{ matrix.config }}_${{ matrix.board }}_build
  #         path: |
  #           build/zephyr/merged.hex
