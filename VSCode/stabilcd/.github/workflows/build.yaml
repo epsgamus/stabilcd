@@ -15,14 +15,12 @@ jobs:
     name: stabilcd_build
     runs-on: ubuntu-latest
     steps:
-      - name: checkout
-        uses: actions/checkout@v3.1.0
+      - uses: actions/checkout@v3.1.0
 
       - name: cmake probe
         run: cmake -?
         shell: bash {0}
 
- #     - name: Upload     
  #     - uses: actions/upload-artifact@v3.1.0
  #       with:
  #         name: ${{ matrix.config }}_${{ matrix.board }}_build
