@@ -12,14 +12,15 @@ on:
 
 jobs:
   build:
-    name: stabilcd_build
+    name: build
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v3.1.0
 
-      - name: cmake probe
-        run: cmake -?
-        shell: bash {0}
+#      - name: cmake probe
+#        run: cmake -?
+#        shell: bash {0}
 
  #     - uses: actions/upload-artifact@v3.1.0
  #       with:
