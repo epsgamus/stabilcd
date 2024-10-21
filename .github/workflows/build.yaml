@@ -17,11 +17,9 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v3.1.0
-        shell: bash {0}
 
       - name: cmake probe
         run: cmake -?
-        shell: bash {0}
 
  #     - name: Upload     
  #     - uses: actions/upload-artifact@v3.1.0
