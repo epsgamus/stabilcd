@@ -23,8 +23,8 @@ jobs:
         shell: bash {0}
 
       - name: cmake probe
-#        run: cmake -DCMAKE_MODULE_PATH=./VSCode/stabilcd/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_TOOLCHAIN_FILE=./VSCode/stabilcd/cmake/gcc-arm-none-eabi.cmake -S./VSCode/stabilcd -B./VSCode/stabilcd/build/debug -G Ninja
-        run: cmake --build ./VSCode/stabilcd/build/debug --target all --
+        run: cmake -D CMAKE_BUILD_TYPE=Debug -D CMAKE_EXPORT_COMPILE_COMMANDS=ON  --toolchain ./VSCode/stabilcd/cmake/gcc-arm-none-eabi.cmake -S ./VSCode/stabilcd -B ./VSCode/stabilcd/build/debug -G Ninja
+#        run: cmake --build ./VSCode/stabilcd/build/debug --target all --
 
  #     - name: Upload     
  #     - uses: actions/upload-artifact@v3.1.0

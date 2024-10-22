@@ -4,8 +4,8 @@ cmake_minimum_required(VERSION 3.22)
 # User is free to modify the file as much as necessary
 #
 
-list(APPEND CMAKE_MODULE_PATH "./cmake")
-#list(APPEND CMAKE_MODULE_PATH "{{sr:cmake_path}}")
+#list(APPEND CMAKE_MODULE_PATH "./cmake")
+list(APPEND CMAKE_MODULE_PATH "{{sr:cmake_path}}")
 message("Build CMAKE_MODULE_PATH: " ${CMAKE_MODULE_PATH})
 include("cmake/gcc-arm-none-eabi.cmake")
 message("Build CMAKE_MODULE_PATH: " ${CMAKE_MODULE_PATH})
