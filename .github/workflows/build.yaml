@@ -23,7 +23,7 @@ jobs:
         shell: bash {0}
 
       - name: cmake probe
-        run: cmake -D CMAKE_BUILD_TYPE=Debug -D CMAKE_EXPORT_COMPILE_COMMANDS=ON  --toolchain ./VSCode/stabilcd/cmake/gcc-arm-none-eabi.cmake -S ./VSCode/stabilcd -B ./VSCode/stabilcd/build/debug -G Ninja
+        run: cmake -D CMAKE_BUILD_TYPE=Debug --toolchain ./VSCode/stabilcd/cmake/gcc-arm-none-eabi.cmake -S ./VSCode/stabilcd -B ./VSCode/stabilcd/build/debug -- target stabilcd
 #        run: cmake --build ./VSCode/stabilcd/build/debug --target all --
 
  #     - name: Upload     
