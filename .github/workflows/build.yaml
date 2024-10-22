@@ -21,6 +21,7 @@ jobs:
       - name: ls 
         run: ls ./VSCode/stabilcd/cmake -a
         shell: bash {0}
+        
 
       - name: cmake probe
         run: cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_TOOLCHAIN_FILE=./VSCode/stabilcd/cmake/gcc-arm-none-eabi.cmake -S./VSCode/stabilcd -B./VSCode/stabilcd/build/debug -G Ninja
