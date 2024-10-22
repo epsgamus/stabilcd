@@ -18,6 +18,14 @@ jobs:
       - name: checkout
         uses: actions/checkout@v3.1.0
 
+      - name: cd
+        run: cd /VSCode/stabilcd/
+        shell: bash {0}
+
+      - name: ls
+        run: ls -all
+        shell: bash {0}
+
       - name: cmake probe
         run: cmake --help
 
