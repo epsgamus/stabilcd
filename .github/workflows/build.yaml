@@ -18,16 +18,8 @@ jobs:
       - name: checkout
         uses: actions/checkout@v3.1.0
 
-      - name: cd
-        run: cd ./VSCode/stabilcd/
-        shell: bash {0}
-
-      - name: ls
-        run: ls -all
-        shell: bash {0}
-
-      - name: cmake probe
-        run: cmake --help
+       - name: cmake probe
+        run: cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_TOOLCHAIN_FILE=./VSCode/stabilcd/cmake/gcc-arm-none-eabi.cmake -S./VSCode/stabilcd -B./VSCode/stabilcd/build/debug -G Ninja
 
  #     - name: Upload     
  #     - uses: actions/upload-artifact@v3.1.0
