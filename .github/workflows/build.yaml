@@ -24,7 +24,7 @@ jobs:
 
       - name: cmake probe
  #       run: cmake -D CMAKE_BUILD_TYPE=Debug --toolchain ./VSCode/stabilcd/cmake/gcc-arm-none-eabi.cmake -S ./VSCode/stabilcd -B ./VSCode/stabilcd/build/debug -- target stabilcd
-        run: cmake -S ./VSCode/stabilcd -B ./VSCode/stabilcd/build/debug --toolchain ./VSCode/stabilcd/cmake/gcc-arm-none-eabi.cmake
+        run: cmake -S ./VSCode/stabilcd -B ./VSCode/stabilcd/build/debug --toolchain /home/runner/work/stabilcd/stabilcd/VSCode/stabilcd/cmake/gcc-arm-none-eabi.cmake
 
  #     - name: Upload     
  #     - uses: actions/upload-artifact@v3.1.0
