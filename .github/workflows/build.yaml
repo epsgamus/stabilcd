@@ -1,0 +1,34 @@
+name: build
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "**.c"
+      - "**.h"
+      - "**.s"
+      - ".github/workflows/build.yaml"
+      - "*.txt"
+
+jobs:
+  build:
+    name: stabilcd_build
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3.1.0
+
+      - name: ls 
+        run: ls ./VSCode/stabilcd/cmake -a
+        shell: bash {0}
+
+      - name: cmake probe
+ #       run: cmake -D CMAKE_BUILD_TYPE=Debug --toolchain ./VSCode/stabilcd/cmake/gcc-arm-none-eabi.cmake -S ./VSCode/stabilcd -B ./VSCode/stabilcd/build/debug -- target stabilcd
+ #       run: cmake -S /home/runner/work/stabilcd/stabilcd/VSCode/stabilcd -B /home/runner/work/stabilcd/stabilcd/VSCode/stabilcd/build/debug --toolchain /home/runner/work/stabilcd/stabilcd/VSCode/stabilcd/cmake/gcc-arm-none-eabi.cmake
+
+ #     - name: Upload     
+ #     - uses: actions/upload-artifact@v3.1.0
+ #       with:
+ #         name: ${{ matrix.config }}_${{ matrix.board }}_build
+ #         path: |
+ #           build/zephyr/merged.hex
