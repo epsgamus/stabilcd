@@ -33,7 +33,7 @@ jobs:
         shell: bash {0}
 
       - name: cmake probe
-        run: cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=./VSCode/stabilcd/build/debug/install -DCMAKE_TOOLCHAIN_FILE=./VSCode/stabilcd/cmake/gcc-arm-none-eabi.cmake -S./VSCode/stabilcd -B./VSCode/stabilcd/build/debug -G Ninja
+        run: cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=./VSCode/stabilcd/build/debug/install -DCMAKE_TOOLCHAIN_FILE=/__w/stabilcd/stabilcd/VSCode/stabilcd/cmake/gcc-arm-none-eabi.cmake -S./VSCode/stabilcd -B./VSCode/stabilcd/build/debug -G Ninja
 #cmake -DCMAKE_BUILD_TYPE=Debug -DPRESET_NAME=SKSB -DSK_SBMS=ON -DCMAKE_INSTALL_PREFIX=/opt/project/build/SKSB/install -DCMAKE_TOOLCHAIN_FILE:FILEPATH=/opt/project/cmake/gcc-arm-none-eabi.cmake -S/opt/project -B/opt/project/build/SKSB/build -G Ninja
 #cmake --build /opt/project/build/SKSB/build
 
