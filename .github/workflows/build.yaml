@@ -26,7 +26,7 @@ jobs:
         run: ls ./VSCode/stabilcd/cmake -a
         shell: bash {0}
 
-      - name: cmake probe
+ #     - name: cmake probe
  #       run: cmake -D CMAKE_BUILD_TYPE=Debug --toolchain ./VSCode/stabilcd/cmake/gcc-arm-none-eabi.cmake -S ./VSCode/stabilcd -B ./VSCode/stabilcd/build/debug -- target stabilcd
  #       run: cmake -S /home/runner/work/stabilcd/stabilcd/VSCode/stabilcd -B /home/runner/work/stabilcd/stabilcd/VSCode/stabilcd/build/debug --toolchain /home/runner/work/stabilcd/stabilcd/VSCode/stabilcd/cmake/gcc-arm-none-eabi.cmake
 
