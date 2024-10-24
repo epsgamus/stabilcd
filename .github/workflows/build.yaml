@@ -29,7 +29,8 @@ jobs:
 #        shell: bash {0}
 
       - name: ls 
-        run: find / -type f -iname "stm32cubeclt*"
+#        run: find / -type f -iname "stm32cubeclt*"
+        run: ls /opt/st/stm32cubeclt_1.16.0 -a
 
       - name: cmake probe
         run: cmake -DPRESET_NAME=debug -DCMAKE_INSTALL_PREFIX=/__w/stabilcd/stabilcd/VSCode/stabilcd/build/debug/install -DCMAKE_TOOLCHAIN_FILE=/__w/stabilcd/stabilcd/VSCode/stabilcd/cmake/gcc-arm-none-eabi.cmake -S/__w/stabilcd/stabilcd/VSCode/stabilcd -B/__w/stabilcd/stabilcd/VSCode/stabilcd/build/debug
