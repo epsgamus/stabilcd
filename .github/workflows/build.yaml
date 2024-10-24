@@ -24,8 +24,8 @@ jobs:
 #        shell: bash {0}
 
       - name: run docker
-        run: docker run -it ghcr.io/epsgamus/stm32cubeclt:0.1
-        shell: bash {0}
+        run: docker run -it ghcr.io/epsgamus/stm32cubeclt:0.1 bash
+#        shell: bash {0}
 
       - name: ls 
         run: ls -a
