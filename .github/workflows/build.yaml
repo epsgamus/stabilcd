@@ -30,7 +30,7 @@ jobs:
 
       - name: ls 
 #        run: ls ./VSCode/stabilcd/cmake -a
-        run: locate arm-none-eabi-gcc
+        run: find / -type f -name arm-none-eabi-gcc
 #        shell: bash {0}
 
       - name: cmake probe
