@@ -19,10 +19,6 @@ jobs:
 #      - name: checkout
 #        uses: actions/checkout@v3.1.0
 
-      - name: login docker
-        run: docker login ghcr.io -u epsgamus --password-stdin
-#        shell: bash {0}
-
       - name: pull docker
         run: docker pull ghcr.io/epsgamus/stm32cubeclt:0.1
 #        shell: bash {0}
