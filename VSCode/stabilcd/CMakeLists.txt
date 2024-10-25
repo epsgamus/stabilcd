@@ -67,7 +67,7 @@ set(include_DIRS)
 
 # Include directories for each compiler
 set(include_c_DIRS
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/Src
     ${CMAKE_CURRENT_SOURCE_DIR}/CMSIS
     ${CMAKE_CURRENT_SOURCE_DIR}/STM32F429I-Discovery
     ${CMAKE_CURRENT_SOURCE_DIR}/STM32F4xx_StdPeriph_Driver/inc
