@@ -1,15 +1,14 @@
 name: build
 on:
   push:
-#    branches:
-#      - master
+    branches:
+      - master
     paths:
       - "**.c"
       - "**.h"
       - "**.s"
       - ".github/workflows/build.yaml"
       - "*.txt"
-
 jobs:
   build:
     name: stabilcd_build
@@ -38,3 +37,4 @@ jobs:
         with:
           name: stabilcd_build
           path: /__w/stabilcd/stabilcd/VSCode/stabilcd/build/stabilcd.hex
+          
