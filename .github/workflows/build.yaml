@@ -9,26 +9,32 @@ on:
       - "**.s"
       - ".github/workflows/build.yaml"
       - "*.txt"
-
 jobs:
   build:
     name: stabilcd_build
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/epsgamus/stm32cubeclt:0.1
     steps:
-      - name: checkout
-        uses: actions/checkout@v3.1.0
+      - name: Checkout
+        uses: actions/checkout@main
 
-      - name: ls 
-        run: ls ./VSCode/stabilcd/cmake -a
-        shell: bash {0}
+      - name: ST pkg list 
+#        run: find / -type f -iname "stm32cubeclt*"
+        run: ls /opt/st/stm32cubeclt_1.16.0 -a
 
-      - name: cmake probe
- #       run: cmake -D CMAKE_BUILD_TYPE=Debug --toolchain ./VSCode/stabilcd/cmake/gcc-arm-none-eabi.cmake -S ./VSCode/stabilcd -B ./VSCode/stabilcd/build/debug -- target stabilcd
- #       run: cmake -S /home/runner/work/stabilcd/stabilcd/VSCode/stabilcd -B /home/runner/work/stabilcd/stabilcd/VSCode/stabilcd/build/debug --toolchain /home/runner/work/stabilcd/stabilcd/VSCode/stabilcd/cmake/gcc-arm-none-eabi.cmake
+      - name: ST pkg dirs
+#        run: find / -type f -iname "stm32cubeclt*"
+        run: /opt/st/stm32cubeclt_1.16.0/STM32CubeCLT_metadata.sh
 
- #     - name: Upload     
- #     - uses: actions/upload-artifact@v3.1.0
- #       with:
- #         name: ${{ matrix.config }}_${{ matrix.board }}_build
- #         path: |
- #           build/zephyr/merged.hex
+      - name: Build 
+        run: |
+          PATH=$PATH:/opt/st/stm32cubeclt_1.16.0/Ninja/bin:/opt/st/stm32cubeclt_1.16.0/GNU-tools-for-STM32/bin
+          cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_TOOLCHAIN_FILE=/__w/stabilcd/stabilcd/VSCode/stabilcd/cmake/gcc-arm-none-eabi.cmake -S/__w/stabilcd/stabilcd/VSCode/stabilcd -B/__w/stabilcd/stabilcd/VSCode/stabilcd/build -G Ninja
+          cmake --build /__w/stabilcd/stabilcd/VSCode/stabilcd/build
+
+      - uses: actions/upload-artifact@main
+        with:
+          name: stabilcd_build
+          path: /__w/stabilcd/stabilcd/VSCode/stabilcd/build/stabilcd.hex
+
