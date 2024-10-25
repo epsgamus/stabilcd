@@ -1,8 +1,8 @@
 name: build
 on:
   push:
-    branches:
-      - master
+#    branches:
+#      - master
     paths:
       - "**.c"
       - "**.h"
@@ -17,7 +17,7 @@ jobs:
       image: ghcr.io/epsgamus/stm32cubeclt:0.1
     steps:
       - name: checkout
-        uses: actions/checkout@v3.1.0
+        uses: actions/checkout@main
 
       - name: st pkg list 
 #        run: find / -type f -iname "stm32cubeclt*"
@@ -33,8 +33,8 @@ jobs:
           cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_TOOLCHAIN_FILE=/__w/stabilcd/stabilcd/VSCode/stabilcd/cmake/gcc-arm-none-eabi.cmake -S/__w/stabilcd/stabilcd/VSCode/stabilcd -B/__w/stabilcd/stabilcd/VSCode/stabilcd/build -G Ninja
           cmake --build /__w/stabilcd/stabilcd/VSCode/stabilcd/build
 
-      - uses: actions/upload-artifact@v3.1.0
+      - uses: actions/upload-artifact@main
         with:
           name: stabilcd_build
           path: /__w/stabilcd/stabilcd/VSCode/stabilcd/build/stabilcd.hex
-          
+
