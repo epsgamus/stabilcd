@@ -1,8 +1,8 @@
 name: build
 on:
   push:
-#    branches:
-#      - master
+    branches:
+      - master
     paths:
       - "**.c"
       - "**.h"
@@ -16,18 +16,18 @@ jobs:
     container:
       image: ghcr.io/epsgamus/stm32cubeclt:0.1
     steps:
-      - name: checkout
+      - name: Checkout
         uses: actions/checkout@main
 
-      - name: st pkg list 
+      - name: ST pkg list 
 #        run: find / -type f -iname "stm32cubeclt*"
         run: ls /opt/st/stm32cubeclt_1.16.0 -a
 
-      - name: st pkg dirs
+      - name: ST pkg dirs
 #        run: find / -type f -iname "stm32cubeclt*"
         run: /opt/st/stm32cubeclt_1.16.0/STM32CubeCLT_metadata.sh
 
-      - name: cmake 
+      - name: Build 
         run: |
           PATH=$PATH:/opt/st/stm32cubeclt_1.16.0/Ninja/bin:/opt/st/stm32cubeclt_1.16.0/GNU-tools-for-STM32/bin
           cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_TOOLCHAIN_FILE=/__w/stabilcd/stabilcd/VSCode/stabilcd/cmake/gcc-arm-none-eabi.cmake -S/__w/stabilcd/stabilcd/VSCode/stabilcd -B/__w/stabilcd/stabilcd/VSCode/stabilcd/build -G Ninja
