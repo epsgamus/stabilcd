@@ -45,8 +45,8 @@ jobs:
       - name: cmake probe
         run: |
           PATH=$PATH:/opt/st/stm32cubeclt_1.16.0/Ninja/bin:/opt/st/stm32cubeclt_1.16.0/GNU-tools-for-STM32/bin
-          cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=/__w/stabilcd/stabilcd/VSCode/stabilcd/build/debug/install -DCMAKE_TOOLCHAIN_FILE=/__w/stabilcd/stabilcd/VSCode/stabilcd/cmake/gcc-arm-none-eabi.cmake -S/__w/stabilcd/stabilcd/VSCode/stabilcd -B/__w/stabilcd/stabilcd/VSCode/stabilcd/build/debug -G Ninja --build /__w/stabilcd/stabilcd/VSCode/stabilcd/build
-#          cmake --build /__w/stabilcd/stabilcd/VSCode/stabilcd/build
+          cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=/__w/stabilcd/stabilcd/VSCode/stabilcd/build/debug/install -DCMAKE_TOOLCHAIN_FILE=/__w/stabilcd/stabilcd/VSCode/stabilcd/cmake/gcc-arm-none-eabi.cmake -S/__w/stabilcd/stabilcd/VSCode/stabilcd -B/__w/stabilcd/stabilcd/VSCode/stabilcd/build/debug -G Ninja
+          cmake --build /__w/stabilcd/stabilcd/VSCode/stabilcd/build
 #cmake -DCMAKE_BUILD_TYPE=Debug -DPRESET_NAME=SKSB -DSK_SBMS=ON -DCMAKE_INSTALL_PREFIX=/opt/project/build/SKSB/install -DCMAKE_TOOLCHAIN_FILE:FILEPATH=/opt/project/cmake/gcc-arm-none-eabi.cmake -S/opt/project -B/opt/project/build/SKSB/build
 #cmake --build /opt/project/build/SKSB/build
 
