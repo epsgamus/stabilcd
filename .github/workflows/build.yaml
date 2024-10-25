@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v3.1.0
 
       - name: upd path
-        run: PATH=$PATH:/opt/st/stm32cubeclt_1.16.0/Ninja/bin:/opt/st/stm32cubeclt_1.16.0/GNU-tools-for-STM32/bin
+        run: export PATH=$PATH:/opt/st/stm32cubeclt_1.16.0/Ninja/bin:/opt/st/stm32cubeclt_1.16.0/GNU-tools-for-STM32/bin
         shell: bash {0}
 
       - name: echo path
