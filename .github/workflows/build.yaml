@@ -20,43 +20,22 @@ jobs:
       - name: checkout
         uses: actions/checkout@v3.1.0
 
-#      - name: upd path
-#        run: |
-#          PATH=$PATH:/opt/st/stm32cubeclt_1.16.0/Ninja:/opt/st/stm32cubeclt_1.16.0/GNU-tools-for-STM32
-#          echo $PATH
-#        shell: bash {0}
-
-#      - name: echo path
-#        run: echo $PATH
-#        shell: bash {0}
-
-#      - name: run docker
-#        run: docker run -it ghcr.io/epsgamus/stm32cubeclt:0.1 bash
-#        shell: bash {0}
-
-      - name: ls 
+      - name: st pkg list 
 #        run: find / -type f -iname "stm32cubeclt*"
         run: ls /opt/st/stm32cubeclt_1.16.0 -a
 
-      - name: ls 
+      - name: st pkg dirs
 #        run: find / -type f -iname "stm32cubeclt*"
         run: /opt/st/stm32cubeclt_1.16.0/STM32CubeCLT_metadata.sh
 
-      - name: cmake probe
+      - name: cmake 
         run: |
           PATH=$PATH:/opt/st/stm32cubeclt_1.16.0/Ninja/bin:/opt/st/stm32cubeclt_1.16.0/GNU-tools-for-STM32/bin
           cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_TOOLCHAIN_FILE=/__w/stabilcd/stabilcd/VSCode/stabilcd/cmake/gcc-arm-none-eabi.cmake -S/__w/stabilcd/stabilcd/VSCode/stabilcd -B/__w/stabilcd/stabilcd/VSCode/stabilcd/build -G Ninja
           cmake --build /__w/stabilcd/stabilcd/VSCode/stabilcd/build
-          
-#cmake -DCMAKE_BUILD_TYPE=Debug -DPRESET_NAME=SKSB -DSK_SBMS=ON -DCMAKE_INSTALL_PREFIX=/opt/project/build/SKSB/install -DCMAKE_TOOLCHAIN_FILE:FILEPATH=/opt/project/cmake/gcc-arm-none-eabi.cmake -S/opt/project -B/opt/project/build/SKSB/build
-#cmake --build /opt/project/build/SKSB/build
 
-
- #       run: cmake -S /home/runner/work/stabilcd/stabilcd/VSCode/stabilcd -B /home/runner/work/stabilcd/stabilcd/VSCode/stabilcd/build/debug --toolchain /home/runner/work/stabilcd/stabilcd/VSCode/stabilcd/cmake/gcc-arm-none-eabi.cmake
-
- #     - name: Upload     
- #     - uses: actions/upload-artifact@v3.1.0
- #       with:
- #         name: ${{ matrix.config }}_${{ matrix.board }}_build
- #         path: |
- #           build/zephyr/merged.hex
+      - name: upload     
+      - uses: actions/upload-artifact@v3.1.0
+        with:
+          name: stabilcd_build
+          path: /__w/stabilcd/stabilcd/VSCode/stabilcd/build/debug/stabilcd.hex
