@@ -9,6 +9,7 @@ on:
       - "**.s"
       - ".github/workflows/build.yaml"
       - "*.txt"
+  pull_request:
 jobs:
   build:
     name: stabilcd_build
