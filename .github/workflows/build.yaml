@@ -22,7 +22,7 @@ jobs:
 
       - name: upd path
         run: |
-          PATH=$PATH:~/opt/st/stm32cubeclt_1.16.0/Ninja:~/opt/st/stm32cubeclt_1.16.0/GNU-tools-for-STM32
+          PATH=$PATH:/opt/st/stm32cubeclt_1.16.0/Ninja:/opt/st/stm32cubeclt_1.16.0/GNU-tools-for-STM32
           echo $PATH
         shell: bash {0}
 
