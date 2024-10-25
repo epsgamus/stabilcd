@@ -34,6 +34,9 @@ jobs:
           cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_TOOLCHAIN_FILE=/__w/stabilcd/stabilcd/VSCode/stabilcd/cmake/gcc-arm-none-eabi.cmake -S/__w/stabilcd/stabilcd/VSCode/stabilcd -B/__w/stabilcd/stabilcd/VSCode/stabilcd/build -G Ninja
           cmake --build /__w/stabilcd/stabilcd/VSCode/stabilcd/build
 
+      - name: elf list
+        run: ls /__w/stabilcd/stabilcd/VSCode/stabilcd/build/debug -a
+
       - uses: actions/upload-artifact@v3.1.0
         with:
           name: stabilcd_build
