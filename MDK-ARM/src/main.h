@@ -47,7 +47,7 @@
 //#define STABILCD_LED_BLINKS
 
 // uncmt to echo msgs to lcd
-//#define STABILCD_LCD_VERBOSE
+#define STABILCD_LCD_VERBOSE
 
 // gyro period, ODR=95HZ
 #define GYRO_ODR95_PERIOD_USEC		10526ul

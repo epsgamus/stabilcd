@@ -263,7 +263,7 @@ void EXTI2_IRQHandler(void)
         // clr it
         calib_flag = 0; 
         // integrate
-        phi_integrated += (omega_z/1000.0F)*(float)(delta_time_usec/1000);  
+        phi_integrated += (omega_z*0.001F)*((float)delta_time_usec*0.001F);  
     }
     if (calib_flag)
     {
