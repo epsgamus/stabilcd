@@ -53,8 +53,7 @@ extern float omega_z_bias;
 
 extern uint32_t systick_cnt;
 
-////
-extern float sens_245dps;
+extern float sens_coeff;
 
 
 volatile uint8_t main_sts; 
@@ -427,13 +426,13 @@ int main(void)
             STM_EVAL_LEDToggle(LED4);
 #endif            
             
-						/*
+					/*
             // rotate
             RotateActiveZone((uint8_t*)frame_new, (uint8_t*)frame_cur, -phi_integrated*MATH_PI_DIV_180, BACKGR_COLOR);
 
             // redraw
             DrawActiveZone((uint8_t*)frame_new, LCD_SIZE_PIXEL_WIDTH/2, LCD_SIZE_PIXEL_HEIGHT/2, BACKGR_COLOR);
-					*/
+						*/
 
             if (calib_flag)
             {
@@ -451,14 +450,15 @@ int main(void)
             LCD_DisplayStringLine(LCD_LINE_3, (uint8_t*)str);
             sprintf((char*)str, "deltaF=%5d", delta_frame_usec/1000);
             LCD_DisplayStringLine(LCD_LINE_4, (uint8_t*)str);
-            */
+            
             sprintf((char*)str, "deltaT=%5d", delta_time_usec/1000);
             LCD_DisplayStringLine(LCD_LINE_3, (uint8_t*)str);
             sprintf((char*)str, "deltaF=%5d", delta_frame_usec/1000);
             LCD_DisplayStringLine(LCD_LINE_4, (uint8_t*)str);
+						*/
 
             
-            sprintf((char*)str, "sens=%5.1f", sens_245dps);
+            sprintf((char*)str, "sens=%5.1f", sens_coeff);
             LCD_DisplayStringLine(LCD_LINE_2, (uint8_t*)str);
 						/*
             sprintf((char*)str, "phi=%6.1f", phi_integrated);

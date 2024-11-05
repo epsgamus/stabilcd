@@ -75,7 +75,7 @@
   */ 
 __IO uint32_t  I3G4250DTimeout = I3G4250D_FLAG_TIMEOUT;  
 static __IO uint32_t TimingDelay;
-float sens_245dps = L3G_Sensitivity_245dps;
+float sens_coeff = L3G_Sensitivity_245dps;
 
 
 /**
@@ -140,9 +140,9 @@ uint8_t I3G4250D_Init(void)
     cltr2 |= (uint8_t) (I3G4250D_HPM_NORMAL_MODE_RES | I3G4250D_HPFCF_ODR105_8HZ);                             
     I3G4250D_Write(&cltr2, I3G4250D_CTRL_REG2_ADDR, 1);
 
-    // CLTR4:
+    // CLTR4: selftest initiated
     uint8_t ctrl4 = 0;
-    ctrl4 |= (uint8_t) (I3G4250D_BLE_LSB | I3G4250D_FULLSCALE_245 | I3G4250D_CTRL4_ST_NEG);
+    ctrl4 |= (uint8_t) (I3G4250D_BLE_LSB | I3G4250D_FULLSCALE_500 | I3G4250D_CTRL4_ST_NEG);
     I3G4250D_Write(&ctrl4, I3G4250D_CTRL_REG4_ADDR, 1);
     
     // CTRL5: HP (and LP filters)
@@ -163,10 +163,11 @@ uint8_t I3G4250D_Init(void)
 		uint8_t id = 0;
     I3G4250D_Read(&id, I3G4250D_WHO_AM_I_ADDR, 1);
 		
+		/*
 		// read selftest rates
-		sens_245dps = 0.0;
+		sens_coeff = 0.0;
 		int8_t sens_qty = 0;
-		for (uint8_t i=0; i<16; i++)
+		//for (uint8_t i=0; i<4; i++)
 		{
 			while (!(I3G4250D_GetDataStatus() & I3G4250D_STATUS_ZYX_DA));
 			uint8_t tmp_lo, tmp_hi;
@@ -176,15 +177,19 @@ uint8_t I3G4250D_Init(void)
 			I3G4250D_Read(&tmp_hi, I3G4250D_OUT_Y_H_ADDR, 1);
 			I3G4250D_Read(&tmp_lo, I3G4250D_OUT_Z_L_ADDR, 1);
 			I3G4250D_Read(&tmp_hi, I3G4250D_OUT_Z_H_ADDR, 1);
-			int16_t z_st_pos = (int16_t)(((uint16_t)tmp_hi << 8) | (uint16_t)tmp_lo);
-			if (i > 10) 
-			{
-					sens_245dps += (float)z_st_pos/L3G_245dps_ST_VALUE;
-					sens_qty++;
-			}
-
+			int16_t z_st_raw = (int16_t)(((uint16_t)tmp_hi << 8) | (uint16_t)tmp_lo);
+			sens_coeff = (float)z_st_raw/L3G_245dps_ST_VALUE;
 		}
-		sens_245dps = sens_245dps/(float)sens_qty;
+		*/
+		
+    // CLTR4: selftest stopped
+		/*
+    ctrl4 = 0;
+    ctrl4 |= (uint8_t) (I3G4250D_BLE_LSB | I3G4250D_FULLSCALE_245);
+    I3G4250D_Write(&ctrl4, I3G4250D_CTRL_REG4_ADDR, 1);
+		*/
+		
+		Delay(100000);
 		
 		return id;
 }

@@ -55,7 +55,7 @@ extern uint8_t calib_flag;
 extern float phi_integrated;
 extern float omega_z;
 extern uint32_t delta_time_usec;
-extern float sens_245dps;
+extern float sens_coeff;
 
 extern uint8_t main_sts; 
 extern uint8_t fifo_sts; 
@@ -255,7 +255,8 @@ void EXTI2_IRQHandler(void)
     int32_t omega_raw = (int16_t)(sum/I3G4250D_FIFO_WM_LEVEL); 
 
     // float rate
-    omega_z = (float)omega_raw/sens_245dps - omega_z_bias;
+    //omega_z = (float)omega_raw/sens_coeff - omega_z_bias;
+    omega_z = (float)omega_raw/sens_coeff;
     
     if (calib_cnt == I3G4250D_CALIB_SAMPLES) 
     {
