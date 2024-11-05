@@ -110,9 +110,6 @@ typedef struct
 
 
 /* Exported functions ------------------------------------------------------- */
-void Delay(__IO uint32_t nTime);
-void TimingDelay_Decrement(void);
-
 static inline vec_2_d VectorSimpleRotation(vec_2_d src, float cos_phi, float sin_phi)
 {
     float x = (src.i1 - ACTIVE_HEIGHT/2);

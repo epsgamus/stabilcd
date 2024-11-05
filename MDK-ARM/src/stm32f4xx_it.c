@@ -55,6 +55,7 @@ extern uint8_t calib_flag;
 extern float phi_integrated;
 extern float omega_z;
 extern uint32_t delta_time_usec;
+extern float sens_245dps;
 
 extern uint8_t main_sts; 
 extern uint8_t fifo_sts; 
@@ -179,7 +180,7 @@ void SysTick_Handler(void)
     {
         // tmply
         lcd_period_flag = 1;
-	}
+		}
 			
 }
 
@@ -232,7 +233,7 @@ void EXTI2_IRQHandler(void)
         I3G4250D_Read(tmpbuffer + 6*i + 2, I3G4250D_OUT_Y_L_ADDR, 2);
         // Z
         I3G4250D_Read(tmpbuffer + 6*i + 4, I3G4250D_OUT_Z_L_ADDR, 2);
-        // Y
+        // X
         I3G4250D_Read(tmpbuffer + 6*i, I3G4250D_OUT_X_L_ADDR, 2);
     }
     
@@ -254,7 +255,7 @@ void EXTI2_IRQHandler(void)
     int32_t omega_raw = (int16_t)(sum/I3G4250D_FIFO_WM_LEVEL); 
 
     // float rate
-    omega_z = (float)omega_raw/L3G_Sensitivity_245dps - omega_z_bias;
+    omega_z = (float)omega_raw/sens_245dps - omega_z_bias;
     
     if (calib_cnt == I3G4250D_CALIB_SAMPLES) 
     {

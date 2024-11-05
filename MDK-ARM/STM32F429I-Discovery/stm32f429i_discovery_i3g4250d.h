@@ -127,6 +127,10 @@ typedef struct
 #define L3G_Sensitivity_500dps     (float)57.1429f        /*!< typical sensitivity 17.5 [mdps/lsb]  */
 #define L3G_Sensitivity_2000dps    (float)14.285f         /*!< typical sensitivity 70 [mdps/lsb] */
 
+#define L3G_245dps_ST_VALUE     	 (float)130.0f
+#define L3G_500dps_ST_VALUE     	 (float)200.0f
+#define L3G_2000dps_ST_VALUE     	 (float)530.0f
+
 // FIFO depth used, samples of ODR
 #define I3G4250D_FIFO_WM_LEVEL    3
 
@@ -213,97 +217,67 @@ typedef struct
 /**************************** END REGISTER MAPPING  ***************************/
 /******************************************************************************/
 
+/** @defgroup WHOAMI
+  * @{
+  */
 #define I_AM_I3G4250D		    ((uint8_t)0xD3)
-
-
-/** @defgroup Axes_Interrupt_Selection 
-  * @{
-  */
-#define I3G4250D_X_INTERRUPT_ENABLE            ((uint8_t)0x02)
-#define I3G4250D_Y_INTERRUPT_ENABLE            ((uint8_t)0x08)
-#define I3G4250D_Z_INTERRUPT_ENABLE            ((uint8_t)0x20)
-#define I3G4250D_AXES_INTERRUPT_ENABLE         ((uint8_t)0x2A)
 /**
   * @}
   */
 
-
-/** @defgroup Full_Scale_Selection 
-  * @{
-  */
-#define I3G4250D_FULLSCALE_245               ((uint8_t)0x00)
-#define I3G4250D_FULLSCALE_500               ((uint8_t)0x10)
-#define I3G4250D_FULLSCALE_2000              ((uint8_t)0x20) 
-/**
-  * @}
-  */
-  
-
-  
-/** @defgroup Block_Data_Update 
-  * @{
-  */  
-#define I3G4250D_BlockDataUpdate_Continous   ((uint8_t)0x00)
-#define I3G4250D_BlockDataUpdate_Single      ((uint8_t)0x80)
-/**
-  * @}
-  */
-  
-/** @defgroup Endian_Data_selection
-  * @{
-  */  
-#define I3G4250D_BLE_LSB                     ((uint8_t)0x00)
-#define I3G4250D_BLE_MSB	                   ((uint8_t)0x40)
-/**
-  * @}
-  */
-  
-/** @defgroup High_Pass_Filter_status 
+/** @defgroup CTRL1 
   * @{
   */   
-#define I3G4250D_HIGHPASSFILTER_DISABLE      ((uint8_t)0x00)
-#define I3G4250D_HIGHPASSFILTER_ENABLE	     ((uint8_t)0x10)
+#define I3G4250D_CTRL1_PD       1 << 3
 /**
   * @}
   */
 
-/** @defgroup INT1_Interrupt_status 
+/** @defgroup CTRL1: OutPut_DataRate_Selection 
   * @{
-  */   
-#define I3G4250D_INT1INTERRUPT_DISABLE       ((uint8_t)0x00)
-#define I3G4250D_INT1INTERRUPT_ENABLE        ((uint8_t)0x80)
+  */
+#define I3G4250D_OUTPUT_DATARATE_105HZ     ((uint8_t)0x00)
+#define I3G4250D_OUTPUT_DATARATE_208HZ    ((uint8_t)0x40)
+#define I3G4250D_OUTPUT_DATARATE_420HZ    ((uint8_t)0x80)
+#define I3G4250D_OUTPUT_DATARATE_840HZ    ((uint8_t)0xC0)
 /**
   * @}
   */
 
-/** @defgroup INT2_Interrupt_status 
+/** @defgroup CTRL1: Axes_Selection 
   * @{
-  */   
-#define I3G4250D_INT2INTERRUPT_DISABLE       ((uint8_t)0x00)
-#define I3G4250D_INT2INTERRUPT_ENABLE        ((uint8_t)0x08)
+  */
+#define I3G4250D_X_ENABLE            ((uint8_t)0x02)
+#define I3G4250D_Y_ENABLE            ((uint8_t)0x01)
+#define I3G4250D_Z_ENABLE            ((uint8_t)0x04)
+#define I3G4250D_AXES_ENABLE         ((uint8_t)0x07)
+#define I3G4250D_AXES_DISABLE        ((uint8_t)0x00)
 /**
   * @}
   */
 
-/** @defgroup INT1_Interrupt_ActiveEdge 
+/** @defgroup CTRL1: BandWidth_Selection 
   * @{
-  */   
-#define I3G4250D_INT1INTERRUPT_LOW_EDGE      ((uint8_t)0x20)
-#define I3G4250D_INT1INTERRUPT_HIGH_EDGE     ((uint8_t)0x00)
+  */
+#define I3G4250D_ODR105_BANDWIDTH_12d5HZ       ((uint8_t)0x00)
+#define I3G4250D_ODR105_BANDWIDTH_25HZ         ((uint8_t)0x30)
+#define I3G4250D_ODR208_BANDWIDTH_12d5HZ       ((uint8_t)0x00)
+#define I3G4250D_ODR208_BANDWIDTH_25HZ         ((uint8_t)0x10)
+#define I3G4250D_ODR208_BANDWIDTH_50HZ         ((uint8_t)0x20)
+#define I3G4250D_ODR208_BANDWIDTH_70HZ         ((uint8_t)0x30)
+#define I3G4250D_ODR420_BANDWIDTH_20HZ         ((uint8_t)0x00)
+#define I3G4250D_ODR420_BANDWIDTH_25HZ         ((uint8_t)0x10)
+#define I3G4250D_ODR420_BANDWIDTH_50HZ         ((uint8_t)0x20)
+#define I3G4250D_ODR420_BANDWIDTH_110HZ        ((uint8_t)0x30)
+#define I3G4250D_ODR840_BANDWIDTH_30HZ         ((uint8_t)0x00)
+#define I3G4250D_ODR840_BANDWIDTH_35HZ         ((uint8_t)0x10)
+#define I3G4250D_ODR840_BANDWIDTH_50HZ         ((uint8_t)0x20)
+#define I3G4250D_ODR840_BANDWIDTH_110HZ        ((uint8_t)0x30)
 /**
   * @}
   */
-  
-/** @defgroup Boot_Mode_selection 
-  * @{
-  */
-#define I3G4250D_BOOT_NORMALMODE             ((uint8_t)0x00)
-#define I3G4250D_BOOT_REBOOTMEMORY           ((uint8_t)0x80)
-/**
-  * @}
-  */  
- 
-/** @defgroup High_Pass_Filter_Mode 
+
+/** @defgroup CTRL2: High_Pass_Filter_Mode 
   * @{
   */   
 #define I3G4250D_HPM_NORMAL_MODE_RES         ((uint8_t)0x00)
@@ -314,7 +288,7 @@ typedef struct
   * @}
   */
 
-/** @defgroup High_Pass_CUT OFF_Frequency 
+/** @defgroup CTRL2: High_Pass_CUT OFF_Frequency 
   * @{
   */   
 #define I3G4250D_HPFCF_ODR105_8HZ    0x00
@@ -364,78 +338,6 @@ typedef struct
   * @}
   */
 
-
-/** @defgroup FIFO modes 
-  * @{
-  */   
-#define I3G4250D_FIFO_MODE_POS        5
-#define I3G4250D_FIFO_MODE_BYPASS         0 << I3G4250D_FIFO_MODE_POS
-#define I3G4250D_FIFO_MODE_FIFO           1 << I3G4250D_FIFO_MODE_POS
-#define I3G4250D_FIFO_MODE_STREAM         2 << I3G4250D_FIFO_MODE_POS
-/**
-  * @}
-  */
-
-
-
-
-
-
-/** @defgroup CTRL1 
-  * @{
-  */   
-#define I3G4250D_CTRL1_PD       1 << 3
-/**
-  * @}
-  */
-
-/** @defgroup CTRL1: OutPut_DataRate_Selection 
-  * @{
-  */
-#define I3G4250D_OUTPUT_DATARATE_105HZ     ((uint8_t)0x00)
-#define I3G4250D_OUTPUT_DATARATE_208HZ    ((uint8_t)0x40)
-#define I3G4250D_OUTPUT_DATARATE_420HZ    ((uint8_t)0x80)
-#define I3G4250D_OUTPUT_DATARATE_840HZ    ((uint8_t)0xC0)
-/**
-  * @}
-  */
-
-/** @defgroup CTRL1: Axes_Selection 
-  * @{
-  */
-#define I3G4250D_X_ENABLE            ((uint8_t)0x02)
-#define I3G4250D_Y_ENABLE            ((uint8_t)0x01)
-#define I3G4250D_Z_ENABLE            ((uint8_t)0x04)
-#define I3G4250D_AXES_ENABLE         ((uint8_t)0x07)
-#define I3G4250D_AXES_DISABLE        ((uint8_t)0x00)
-/**
-  * @}
-  */
-
-/** @defgroup CTRL1 BandWidth_Selection 
-  * @{
-  */
-#define I3G4250D_ODR105_BANDWIDTH_12d5HZ       ((uint8_t)0x00)
-#define I3G4250D_ODR105_BANDWIDTH_25HZ         ((uint8_t)0x30)
-#define I3G4250D_ODR208_BANDWIDTH_12d5HZ       ((uint8_t)0x00)
-#define I3G4250D_ODR208_BANDWIDTH_25HZ         ((uint8_t)0x10)
-#define I3G4250D_ODR208_BANDWIDTH_50HZ         ((uint8_t)0x20)
-#define I3G4250D_ODR208_BANDWIDTH_70HZ         ((uint8_t)0x30)
-#define I3G4250D_ODR420_BANDWIDTH_20HZ         ((uint8_t)0x00)
-#define I3G4250D_ODR420_BANDWIDTH_25HZ         ((uint8_t)0x10)
-#define I3G4250D_ODR420_BANDWIDTH_50HZ         ((uint8_t)0x20)
-#define I3G4250D_ODR420_BANDWIDTH_110HZ        ((uint8_t)0x30)
-#define I3G4250D_ODR840_BANDWIDTH_30HZ         ((uint8_t)0x00)
-#define I3G4250D_ODR840_BANDWIDTH_35HZ         ((uint8_t)0x10)
-#define I3G4250D_ODR840_BANDWIDTH_50HZ         ((uint8_t)0x20)
-#define I3G4250D_ODR840_BANDWIDTH_110HZ        ((uint8_t)0x30)
-/**
-  * @}
-  */
-
-
-
-
 /** @defgroup CTRL3
   * @{
   */   
@@ -450,7 +352,36 @@ typedef struct
 /**
   * @}
   */
+	
+/** @defgroup CTRL4 
+  * @{
+  */   
+#define I3G4250D_CTRL4_ST_DIS           0 << 1
+#define I3G4250D_CTRL4_ST_POS           1 << 1
+#define I3G4250D_CTRL4_ST_NEG           3 << 1
+/**
+  * @}
+  */
 
+/** @defgroup CLTR4: Endian_Data_selection
+  * @{
+  */  
+#define I3G4250D_BLE_LSB                     ((uint8_t)0x00)
+#define I3G4250D_BLE_MSB	                   ((uint8_t)0x40)
+/**
+  * @}
+  */
+
+/** @defgroup CTRL4: Full_Scale_Selection 
+  * @{
+  */
+#define I3G4250D_FULLSCALE_245               ((uint8_t)0x00)
+#define I3G4250D_FULLSCALE_500               ((uint8_t)0x10)
+#define I3G4250D_FULLSCALE_2000              ((uint8_t)0x20) 
+/**
+  * @}
+  */
+  
 /** @defgroup CTRL5
   * @{
   */   
@@ -465,7 +396,44 @@ typedef struct
   * @}
   */
 
-/** @defgroup FIFO_SRC
+/** @defgroup INT1_CFG: Axes_Interrupt_Selection 
+  * @{
+  */
+#define I3G4250D_X_INTERRUPT_ENABLE            ((uint8_t)0x02)
+#define I3G4250D_Y_INTERRUPT_ENABLE            ((uint8_t)0x08)
+#define I3G4250D_Z_INTERRUPT_ENABLE            ((uint8_t)0x20)
+#define I3G4250D_AXES_INTERRUPT_ENABLE         ((uint8_t)0x2A)
+/**
+  * @}
+  */
+
+/** @defgroup STATUS_REG
+  * @{
+  */
+#define I3G4250D_STATUS_ZYX_OVR						1 << 7
+#define I3G4250D_STATUS_Z_OVR							1 << 6
+#define I3G4250D_STATUS_Y_OVR							1 << 5
+#define I3G4250D_STATUS_X_OVR							1 << 4
+#define I3G4250D_STATUS_ZYX_DA						1 << 3
+#define I3G4250D_STATUS_Z_DA							1 << 2
+#define I3G4250D_STATUS_Y_DA							1 << 1
+#define I3G4250D_STATUS_X_DA							1 << 0
+/**
+  * @}
+  */
+
+/** @defgroup FIFO_CTRL_REG
+  * @{
+  */   
+#define I3G4250D_FIFO_MODE_POS        5
+#define I3G4250D_FIFO_MODE_BYPASS         0 << I3G4250D_FIFO_MODE_POS
+#define I3G4250D_FIFO_MODE_FIFO           1 << I3G4250D_FIFO_MODE_POS
+#define I3G4250D_FIFO_MODE_STREAM         2 << I3G4250D_FIFO_MODE_POS
+/**
+  * @}
+  */
+
+/** @defgroup FIFO_SRC_REG
   * @{
   */   
 #define I3G4250D_FIFO_SRC_WTM         1 << 7
@@ -491,7 +459,7 @@ typedef struct
   * @{
   */
 /* Sensor Configuration Functions */ 
-void I3G4250D_Init(void);
+uint8_t I3G4250D_Init(void);
 void I3G4250D_RebootCmd(void);
 
 /*INT1 Interrupt Configuration Functions */
@@ -522,6 +490,9 @@ void I3G4250D_INT2_EXTI_Config(void);
    Typically the user implementation of this callback should reset MEMS peripheral
    and re-initialize communication or in worst case reset all the application. */
 uint32_t I3G4250D_TIMEOUT_UserCallback(void);
+
+void Delay(__IO uint32_t nTime);
+void TimingDelay_Decrement(void);
 
 #ifdef __cplusplus
 }

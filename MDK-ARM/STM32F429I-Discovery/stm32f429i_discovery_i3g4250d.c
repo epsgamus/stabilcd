@@ -74,6 +74,10 @@
   * @{
   */ 
 __IO uint32_t  I3G4250DTimeout = I3G4250D_FLAG_TIMEOUT;  
+static __IO uint32_t TimingDelay;
+float sens_245dps = L3G_Sensitivity_245dps;
+
+
 /**
   * @}
   */
@@ -84,21 +88,6 @@ __IO uint32_t  I3G4250DTimeout = I3G4250D_FLAG_TIMEOUT;
 static uint8_t I3G4250D_SendByte(uint8_t byte);
 static void I3G4250D_LowLevel_Init(void);
 static void I3G4250D_EXTI_Config(void);
-
-#if 0
-/**
-  * @brief  Inserts a delay time.
-  * @param  nCount: specifies the delay time length.
-  * @retval None
-  */
-static void delay(__IO uint32_t nCount)
-{
-  __IO uint32_t index = 0;
-  for(index = (100000 * nCount); index != 0; index--)
-  {
-  }
-}
-#endif
 
 /**
   * @}
@@ -114,9 +103,12 @@ static void delay(__IO uint32_t nCount)
   *         that contains the configuration setting for the I3G4250D.
   * @retval None
   */
-void I3G4250D_Init(void)
+uint8_t I3G4250D_Init(void)
 {  
-    // SPI
+    // > 10 ms since poweron
+    Delay(10000);
+
+		// SPI
     I3G4250D_LowLevel_Init();
 
     // reset device regs
@@ -137,7 +129,8 @@ void I3G4250D_Init(void)
     }
     // fifo and ints disable
     I3G4250D_SetFIFOMode_WMLevel(I3G4250D_FIFO_MODE_BYPASS, 0);
-    I3G4250D_INT2InterruptCmd(DISABLE);
+    uint8_t ctrl3 = 0;
+		I3G4250D_Write(&ctrl3, I3G4250D_CTRL_REG3_ADDR, 1);  		
     I3G4250D_FIFOEnaCmd(DISABLE);
      
     // CTRL2: set up HP filter
@@ -149,7 +142,7 @@ void I3G4250D_Init(void)
 
     // CLTR4:
     uint8_t ctrl4 = 0;
-    ctrl4 |= (uint8_t) (I3G4250D_BLE_LSB | I3G4250D_FULLSCALE_245);
+    ctrl4 |= (uint8_t) (I3G4250D_BLE_LSB | I3G4250D_FULLSCALE_245 | I3G4250D_CTRL4_ST_NEG);
     I3G4250D_Write(&ctrl4, I3G4250D_CTRL_REG4_ADDR, 1);
     
     // CTRL5: HP (and LP filters)
@@ -162,6 +155,38 @@ void I3G4250D_Init(void)
     ctrl1 |= (uint8_t) (I3G4250D_CTRL1_PD | I3G4250D_OUTPUT_DATARATE_105HZ | \
         I3G4250D_AXES_ENABLE | I3G4250D_ODR105_BANDWIDTH_25HZ);
     I3G4250D_Write(&ctrl1, I3G4250D_CTRL_REG1_ADDR, 1);
+		
+    // > 250 ms since poweron
+		Delay(300000);
+
+		// id
+		uint8_t id = 0;
+    I3G4250D_Read(&id, I3G4250D_WHO_AM_I_ADDR, 1);
+		
+		// read selftest rates
+		sens_245dps = 0.0;
+		int8_t sens_qty = 0;
+		for (uint8_t i=0; i<16; i++)
+		{
+			while (!(I3G4250D_GetDataStatus() & I3G4250D_STATUS_ZYX_DA));
+			uint8_t tmp_lo, tmp_hi;
+			I3G4250D_Read(&tmp_lo, I3G4250D_OUT_X_L_ADDR, 1);
+			I3G4250D_Read(&tmp_hi, I3G4250D_OUT_X_H_ADDR, 1);
+			I3G4250D_Read(&tmp_lo, I3G4250D_OUT_Y_L_ADDR, 1);
+			I3G4250D_Read(&tmp_hi, I3G4250D_OUT_Y_H_ADDR, 1);
+			I3G4250D_Read(&tmp_lo, I3G4250D_OUT_Z_L_ADDR, 1);
+			I3G4250D_Read(&tmp_hi, I3G4250D_OUT_Z_H_ADDR, 1);
+			int16_t z_st_pos = (int16_t)(((uint16_t)tmp_hi << 8) | (uint16_t)tmp_lo);
+			if (i > 10) 
+			{
+					sens_245dps += (float)z_st_pos/L3G_245dps_ST_VALUE;
+					sens_qty++;
+			}
+
+		}
+		sens_245dps = sens_245dps/(float)sens_qty;
+		
+		return id;
 }
 
 /**
@@ -272,42 +297,42 @@ void I3G4250D_SetFIFOMode_WMLevel(uint8_t mode, uint8_t wmlevel)
   * @brief  Enable or disable INT1 interrupt
   * @param  InterruptState: State of INT1 Interrupt 
   *      This parameter can be: 
-  *        @arg I3G4250D_INT1INTERRUPT_DISABLE
-  *        @arg I3G4250D_INT1INTERRUPT_ENABLE    
+  *        @arg DISABLE
+  *        @arg ENABLE    
   * @retval None
   */
 void I3G4250D_INT1InterruptCmd(uint8_t InterruptState)
-{  
-  uint8_t tmpreg;
-  
-  /* Read CTRL_REG3 register */
-  I3G4250D_Read(&tmpreg, I3G4250D_CTRL_REG3_ADDR, 1);
+{
+		uint8_t tmpreg;
+	
+		/* Read CTRL_REG3 register */
+		I3G4250D_Read(&tmpreg, I3G4250D_CTRL_REG3_ADDR, 1);
                   
-  tmpreg |= 0x80 & (InterruptState << 7);
+		if (InterruptState) tmpreg |= I3G4250D_CTRL3_I1_INT;
   
-  /* Write value to MEMS CTRL_REG3 regsister */
-  I3G4250D_Write(&tmpreg, I3G4250D_CTRL_REG3_ADDR, 1);
+		/* Write value to MEMS CTRL_REG3 regsister */
+		I3G4250D_Write(&tmpreg, I3G4250D_CTRL_REG3_ADDR, 1);
 }
 
 /**
   * @brief  Enable or disable INT2 interrupt
   * @param  InterruptState: State of INT2 Interrupt 
   *      This parameter can be: 
-  *        @arg I3G4250D_INT2INTERRUPT_DISABLE
-  *        @arg I3G4250D_INT2INTERRUPT_ENABLE    
+  *        @arg DISABLE
+  *        @arg ENABLE    
   * @retval None
   */
 void I3G4250D_INT2InterruptCmd(uint8_t InterruptState)
 {  
-    uint8_t tmpreg = 0;
-    
+    uint8_t tmpreg;
+
+	  /* Read CTRL_REG3 register */
+		I3G4250D_Read(&tmpreg, I3G4250D_CTRL_REG3_ADDR, 1);
+
     if (InterruptState) tmpreg |= I3G4250D_CTRL3_I2_WTM;
 
     I3G4250D_Write(&tmpreg, I3G4250D_CTRL_REG3_ADDR, 1);
 }
-
-
-
 
 
 /**
@@ -337,8 +362,8 @@ void I3G4250D_FilterConfig(I3G4250D_FilterConfigTypeDef *I3G4250D_FilterStruct)
   * @brief  Enable or Disable High Pass Filter
   * @param  HighPassFilterState: new state of the High Pass Filter feature.
   *      This parameter can be: 
-  *         @arg: I3G4250D_HIGHPASSFILTER_DISABLE 
-  *         @arg: I3G4250D_HIGHPASSFILTER_ENABLE          
+  *         @arg: 0 
+  *         @arg: I3G4250D_CTRL5_HPF_ENA          
   * @retval None
   */
 void I3G4250D_FilterCmd(uint8_t HighPassFilterState)
@@ -664,9 +689,32 @@ void I3G4250D_INT2_EXTI_Config(void)
   NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x0;
   NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
   NVIC_Init(&NVIC_InitStructure); 
-  
 }
 
+/**
+  * @brief  Inserts a delay time.
+  * @param  nTime: specifies the delay time length
+  * @retval None
+  */
+void Delay(__IO uint32_t nTime)
+{
+  TimingDelay = nTime;
+
+  while(TimingDelay != 0);
+}
+
+/**
+  * @brief  Decrements the TimingDelay variable.
+  * @param  None
+  * @retval None
+  */
+void TimingDelay_Decrement(void)
+{
+  if (TimingDelay != 0x00)
+  { 
+    TimingDelay--;
+  }
+}
 
 
 #ifdef USE_DEFAULT_TIMEOUT_CALLBACK

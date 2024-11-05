@@ -53,11 +53,15 @@ extern float omega_z_bias;
 
 extern uint32_t systick_cnt;
 
+////
+extern float sens_245dps;
+
+
 volatile uint8_t main_sts; 
 volatile uint8_t fifo_sts; 
 uint32_t delta_time_usec;
 
-static __IO uint32_t TimingDelay;
+//static __IO uint32_t TimingDelay;
 RCC_ClocksTypeDef RCC_Clocks;
 
 // transformed active zone
@@ -285,30 +289,6 @@ uint32_t I3G4250D_TIMEOUT_UserCallback(void)
   return 0;
 }
 
-/**
-  * @brief  Inserts a delay time.
-  * @param  nTime: specifies the delay time length
-  * @retval None
-  */
-void Delay(__IO uint32_t nTime)
-{
-  TimingDelay = nTime;
-
-  while(TimingDelay != 0);
-}
-
-/**
-  * @brief  Decrements the TimingDelay variable.
-  * @param  None
-  * @retval None
-  */
-void TimingDelay_Decrement(void)
-{
-  if (TimingDelay != 0x00)
-  { 
-    TimingDelay--;
-  }
-}
 
 /**
   * @brief  Main program
@@ -344,7 +324,7 @@ int main(void)
   
     /* Clear the Background Layer */ 
     LCD_Clear(LCD_COLOR_WHITE);
-	LCD_SetColors(LCD_COLOR_BLUE, LCD_COLOR_WHITE);
+		LCD_SetColors(LCD_COLOR_BLUE, LCD_COLOR_WHITE);
 	
     uint8_t str[15];
    
@@ -364,14 +344,24 @@ int main(void)
    
    
     // > 10 ms since poweron
-    Delay(10000);
+//    Delay(10000);
    
     /* Gyroscope configuration */
-    I3G4250D_Init();
+    uint8_t id = I3G4250D_Init();
+    if (id == I_AM_I3G4250D)
+    {
+        LCD_DisplayStringLine(LCD_LINE_1, (uint8_t*)"Sensor:I3G4250D");
+    }
+    else
+    {
+        sprintf((char*)str, "Sensor ID=0x%X", id);
+        LCD_DisplayStringLine(LCD_LINE_1, (uint8_t*)str);
+    }
 
     // > 250 ms since poweron
-    Delay(300000);    
+//    Delay(300000);    
     
+/*		
     uint8_t id;
     I3G4250D_Read(&id, I3G4250D_WHO_AM_I_ADDR, 1);
     if (id == I_AM_I3G4250D)
@@ -383,6 +373,7 @@ int main(void)
         sprintf((char*)str, "Sensor ID=0x%X", id);
         LCD_DisplayStringLine(LCD_LINE_1, (uint8_t*)str);
     }
+*/		
     LCD_DisplayStringLine(LCD_LINE_2, (uint8_t*)"Press USER...");
 
     
@@ -393,7 +384,7 @@ int main(void)
     {}
 
         
-	LCD_Clear(LCD_COLOR_WHITE);
+		LCD_Clear(LCD_COLOR_WHITE);
 
         
     LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)"Calibration...");
@@ -413,7 +404,7 @@ int main(void)
     }
 
 
-	phi_integrated = 0.0;
+		phi_integrated = 0.0;
     
 #ifdef STABILCD_LCD_VERBOSE            
     uint32_t systick_prev = 0;
@@ -436,12 +427,13 @@ int main(void)
             STM_EVAL_LEDToggle(LED4);
 #endif            
             
-          
+						/*
             // rotate
             RotateActiveZone((uint8_t*)frame_new, (uint8_t*)frame_cur, -phi_integrated*MATH_PI_DIV_180, BACKGR_COLOR);
 
             // redraw
             DrawActiveZone((uint8_t*)frame_new, LCD_SIZE_PIXEL_WIDTH/2, LCD_SIZE_PIXEL_HEIGHT/2, BACKGR_COLOR);
+					*/
 
             if (calib_flag)
             {
@@ -449,9 +441,10 @@ int main(void)
             }
 #ifdef STABILCD_LCD_VERBOSE            
            
-            /*
+            
             sprintf((char*)str, "omega=%5.1f", omega_z);
             LCD_DisplayStringLine(LCD_LINE_1, (uint8_t*)str);
+						/*
             sprintf((char*)str, "phi=%6.1f", phi_integrated);
             LCD_DisplayStringLine(LCD_LINE_2, (uint8_t*)str);
             sprintf((char*)str, "deltaT=%5d", delta_time_usec/1000);
@@ -464,9 +457,10 @@ int main(void)
             sprintf((char*)str, "deltaF=%5d", delta_frame_usec/1000);
             LCD_DisplayStringLine(LCD_LINE_4, (uint8_t*)str);
 
-            /*
-            sprintf((char*)str, "bias=%5.1f", omega_z_bias);
-            LCD_DisplayStringLine(LCD_LINE_3, (uint8_t*)str);
+            
+            sprintf((char*)str, "sens=%5.1f", sens_245dps);
+            LCD_DisplayStringLine(LCD_LINE_2, (uint8_t*)str);
+						/*
             sprintf((char*)str, "phi=%6.1f", phi_integrated);
             LCD_DisplayStringLine(LCD_LINE_4, (uint8_t*)str);
             sprintf((char*)str, "sts=0x%X", main_sts);
@@ -479,7 +473,7 @@ int main(void)
 #endif
     
     
-		}
+				} // lcd_period_flag
     }
 }
 
