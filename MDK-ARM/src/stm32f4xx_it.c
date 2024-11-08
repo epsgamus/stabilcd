@@ -51,6 +51,7 @@ volatile uint32_t systick_cnt = 0;
 uint32_t time_prev_usec = 0;
 
 extern uint8_t lcd_period_flag;
+extern uint8_t exti2_flag;
 extern uint8_t calib_flag;
 extern float phi_integrated;
 extern float omega_z;
@@ -206,8 +207,9 @@ void EXTI2_IRQHandler(void)
         // tgl LED3
         STM_EVAL_LEDToggle(LED3);
 #endif        
-        EXTI_ClearITPendingBit(I3G4250D_SPI_INT2_EXTI_LINE);   
+        EXTI_ClearITPendingBit(I3G4250D_SPI_INT2_EXTI_LINE); 
     }
+		exti2_flag = 1;
     
     // used after calib completion
     delta_time_usec = systick_cnt - time_prev_usec;
@@ -255,8 +257,7 @@ void EXTI2_IRQHandler(void)
     int32_t omega_raw = (int16_t)(sum/I3G4250D_FIFO_WM_LEVEL); 
 
     // float rate
-    //omega_z = (float)omega_raw/sens_coeff - omega_z_bias;
-    omega_z = (float)omega_raw/sens_coeff;
+    omega_z = (float)omega_raw/sens_coeff - omega_z_bias;
     
     if (calib_cnt == I3G4250D_CALIB_SAMPLES) 
     {

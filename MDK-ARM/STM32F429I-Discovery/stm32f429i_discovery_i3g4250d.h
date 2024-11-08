@@ -131,12 +131,6 @@ typedef struct
 #define L3G_500dps_ST_VALUE     	 (float)200.0f
 #define L3G_2000dps_ST_VALUE     	 (float)530.0f
 
-// FIFO depth used, samples of ODR
-#define I3G4250D_FIFO_WM_LEVEL    3
-
-// calib samples
-#define I3G4250D_CALIB_SAMPLES      300
-
 
 /**
   * @brief  I3G4250D SPI Interface pins
@@ -459,8 +453,8 @@ typedef struct
   * @{
   */
 /* Sensor Configuration Functions */ 
-uint8_t I3G4250D_Init(void);
 void I3G4250D_RebootCmd(void);
+void I3G4250D_LowLevel_Init(void);
 
 /*INT1 Interrupt Configuration Functions */
 void I3G4250D_INT1InterruptCmd(uint8_t InterruptState);
@@ -490,9 +484,6 @@ void I3G4250D_INT2_EXTI_Config(void);
    Typically the user implementation of this callback should reset MEMS peripheral
    and re-initialize communication or in worst case reset all the application. */
 uint32_t I3G4250D_TIMEOUT_UserCallback(void);
-
-void Delay(__IO uint32_t nTime);
-void TimingDelay_Decrement(void);
 
 #ifdef __cplusplus
 }

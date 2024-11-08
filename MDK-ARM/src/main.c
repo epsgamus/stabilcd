@@ -43,7 +43,8 @@
 /* Private macro -------------------------------------------------------------*/
 
     
-uint8_t lcd_period_flag = 0;
+volatile uint8_t lcd_period_flag = 0;
+volatile uint8_t exti2_flag = 0;
 uint8_t calib_flag = 0;
 
 /* Private variables ---------------------------------------------------------*/
@@ -53,14 +54,14 @@ extern float omega_z_bias;
 
 extern uint32_t systick_cnt;
 
-extern float sens_coeff;
+float sens_coeff = L3G_SENS_INITIAL;
 
 
 volatile uint8_t main_sts; 
 volatile uint8_t fifo_sts; 
 uint32_t delta_time_usec;
 
-//static __IO uint32_t TimingDelay;
+static __IO uint32_t TimingDelay;
 RCC_ClocksTypeDef RCC_Clocks;
 
 // transformed active zone
@@ -75,6 +76,128 @@ uint8_t frame_bmp[BMP_WIDTH*BMP_HEIGHT];
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
+
+/**
+  * @brief  Inserts a delay time.
+  * @param  nTime: specifies the delay time length
+  * @retval None
+  */
+void Delay(__IO uint32_t nTime)
+{
+  TimingDelay = nTime;
+
+  while(TimingDelay != 0);
+}
+
+/**
+  * @brief  Decrements the TimingDelay variable.
+  * @param  None
+  * @retval None
+  */
+void TimingDelay_Decrement(void)
+{
+  if (TimingDelay != 0x00)
+  { 
+    TimingDelay--;
+  }
+}
+
+/**
+  * @brief  Set I3G4250D Initialization.
+  * @param  
+  *         
+  * @retval WHOAMI value
+  */
+static uint8_t I3G4250D_Init(void)
+{  
+    // > 10 ms since poweron
+    Delay(10000);
+
+		// SPI
+    I3G4250D_LowLevel_Init();
+
+    // reset device regs
+    // CTRL1
+    uint8_t ctrl1 = 0;
+    I3G4250D_Read(&ctrl1, I3G4250D_CTRL_REG1_ADDR, 1);
+    if (ctrl1 & I3G4250D_CTRL1_PD)
+    {
+        // if sensor already power on
+        // to POWERDOWN intentionally
+        uint8_t tmp = 0;
+        I3G4250D_Write(&tmp, I3G4250D_CTRL_REG1_ADDR, 1);  
+        while (ctrl1 & I3G4250D_CTRL1_PD)
+        {
+            // poll until PD is 0
+            I3G4250D_Read(&ctrl1, I3G4250D_CTRL_REG1_ADDR, 1);
+        }
+    }
+    // fifo and ints disable
+    I3G4250D_SetFIFOMode_WMLevel(I3G4250D_FIFO_MODE_BYPASS, 0);
+    uint8_t ctrl3 = 0;
+		I3G4250D_Write(&ctrl3, I3G4250D_CTRL_REG3_ADDR, 1);  		
+    I3G4250D_FIFOEnaCmd(DISABLE);
+     
+    // CTRL2: set up HP filter
+    uint8_t cltr2 = 0;
+    I3G4250D_Read(&cltr2, I3G4250D_CTRL_REG2_ADDR, 1);
+    cltr2 &= 0xC0;
+    cltr2 |= (uint8_t) (I3G4250D_HPM_NORMAL_MODE_RES | I3G4250D_HPFCF_ODR105_8HZ);                             
+    I3G4250D_Write(&cltr2, I3G4250D_CTRL_REG2_ADDR, 1);
+
+    // CLTR4: selftest initiated
+    uint8_t ctrl4 = 0;
+    ctrl4 |= (uint8_t) (I3G4250D_BLE_LSB | I3G4250D_FULLSCALE_RANGE | STABILCD_ST_TYPE);
+    I3G4250D_Write(&ctrl4, I3G4250D_CTRL_REG4_ADDR, 1);
+    
+    // CTRL5: HP (and LP filters)
+    uint8_t ctrl5 = 0;
+    ctrl5 |= (uint8_t) (I3G4250D_CTRL5_HPF_ENA /*| I3G4250D_CTRL3_OUT_SEL1*/);
+    I3G4250D_Write(&ctrl5, I3G4250D_CTRL_REG5_ADDR, 1);
+
+    // CTRL1: mode ACTIVE
+    ctrl1 = 0;
+    ctrl1 |= (uint8_t) (I3G4250D_CTRL1_PD | I3G4250D_OUTPUT_DATARATE_105HZ | \
+        I3G4250D_AXES_ENABLE | I3G4250D_ODR105_BANDWIDTH_25HZ);
+    I3G4250D_Write(&ctrl1, I3G4250D_CTRL_REG1_ADDR, 1);
+		
+    // > 250 ms since poweron
+		Delay(300000);
+
+		// id
+		uint8_t id = 0;
+    I3G4250D_Read(&id, I3G4250D_WHO_AM_I_ADDR, 1);
+		
+#ifdef STABILCD_USE_SELFTEST		
+		// read selftest rates
+		sens_coeff = 0.0;
+		int8_t sens_qty = 0;
+		for (uint8_t i=0; i<16; i++)
+		{
+			while (!(I3G4250D_GetDataStatus() & I3G4250D_STATUS_ZYX_DA));
+			uint8_t tmp_lo, tmp_hi;
+			I3G4250D_Read(&tmp_lo, I3G4250D_OUT_X_L_ADDR, 1);
+			I3G4250D_Read(&tmp_hi, I3G4250D_OUT_X_H_ADDR, 1);
+			I3G4250D_Read(&tmp_lo, I3G4250D_OUT_Y_L_ADDR, 1);
+			I3G4250D_Read(&tmp_hi, I3G4250D_OUT_Y_H_ADDR, 1);
+			I3G4250D_Read(&tmp_lo, I3G4250D_OUT_Z_L_ADDR, 1);
+			I3G4250D_Read(&tmp_hi, I3G4250D_OUT_Z_H_ADDR, 1);
+			int16_t z_st_raw = (int16_t)(((uint16_t)tmp_hi << 8) | (uint16_t)tmp_lo);
+			sens_coeff = (float)z_st_raw/L3G_SELFTEST_VALUE;
+		}
+
+    // CLTR4: selftest stopped
+    ctrl4 = 0;
+    ctrl4 |= (uint8_t) (I3G4250D_BLE_LSB | I3G4250D_FULLSCALE_RANGE);
+    I3G4250D_Write(&ctrl4, I3G4250D_CTRL_REG4_ADDR, 1);
+		
+		
+		Delay(100000);
+#endif		
+		
+	
+		return id;
+}
 
 
 /**
@@ -275,9 +398,6 @@ static void DrawActiveZone(uint8_t *img, uint16_t horz_pos, uint16_t vert_pos, u
 }
 
 
-
-
-
 /**
 * @brief  Basic management of the timeout situation.
 * @param  None.
@@ -341,10 +461,6 @@ int main(void)
     LCD_DisplayStringLine(LCD_LINE_0, (uint8_t*)str);
     InitActiveZone((uint8_t*)frame_cur, (uint8_t*)frame_bmp, BACKGR_COLOR);
    
-   
-    // > 10 ms since poweron
-//    Delay(10000);
-   
     /* Gyroscope configuration */
     uint8_t id = I3G4250D_Init();
     if (id == I_AM_I3G4250D)
@@ -357,22 +473,7 @@ int main(void)
         LCD_DisplayStringLine(LCD_LINE_1, (uint8_t*)str);
     }
 
-    // > 250 ms since poweron
-//    Delay(300000);    
-    
-/*		
-    uint8_t id;
-    I3G4250D_Read(&id, I3G4250D_WHO_AM_I_ADDR, 1);
-    if (id == I_AM_I3G4250D)
-    {
-        LCD_DisplayStringLine(LCD_LINE_1, (uint8_t*)"Sensor:I3G4250D");
-    }
-    else
-    {
-        sprintf((char*)str, "Sensor ID=0x%X", id);
-        LCD_DisplayStringLine(LCD_LINE_1, (uint8_t*)str);
-    }
-*/		
+  
     LCD_DisplayStringLine(LCD_LINE_2, (uint8_t*)"Press USER...");
 
     
@@ -412,8 +513,8 @@ int main(void)
     
     while (1)
     {
-        // redraw as fast as possible
-        //if (lcd_period_flag)
+        // sync with gyro
+        if (exti2_flag)
         {
 
 #ifdef STABILCD_LCD_VERBOSE            
@@ -426,13 +527,14 @@ int main(void)
             STM_EVAL_LEDToggle(LED4);
 #endif            
             
-					/*
+						
             // rotate
             RotateActiveZone((uint8_t*)frame_new, (uint8_t*)frame_cur, -phi_integrated*MATH_PI_DIV_180, BACKGR_COLOR);
 
             // redraw
             DrawActiveZone((uint8_t*)frame_new, LCD_SIZE_PIXEL_WIDTH/2, LCD_SIZE_PIXEL_HEIGHT/2, BACKGR_COLOR);
-						*/
+					  
+						
 
             if (calib_flag)
             {
@@ -450,19 +552,20 @@ int main(void)
             LCD_DisplayStringLine(LCD_LINE_3, (uint8_t*)str);
             sprintf((char*)str, "deltaF=%5d", delta_frame_usec/1000);
             LCD_DisplayStringLine(LCD_LINE_4, (uint8_t*)str);
-            
+            */
             sprintf((char*)str, "deltaT=%5d", delta_time_usec/1000);
             LCD_DisplayStringLine(LCD_LINE_3, (uint8_t*)str);
-            sprintf((char*)str, "deltaF=%5d", delta_frame_usec/1000);
-            LCD_DisplayStringLine(LCD_LINE_4, (uint8_t*)str);
-						*/
+            //sprintf((char*)str, "deltaF=%5d", delta_frame_usec/1000);
+            //LCD_DisplayStringLine(LCD_LINE_4, (uint8_t*)str);
+						
 
             
             sprintf((char*)str, "sens=%5.1f", sens_coeff);
             LCD_DisplayStringLine(LCD_LINE_2, (uint8_t*)str);
-						/*
+						
             sprintf((char*)str, "phi=%6.1f", phi_integrated);
             LCD_DisplayStringLine(LCD_LINE_4, (uint8_t*)str);
+						/*
             sprintf((char*)str, "sts=0x%X", main_sts);
             LCD_DisplayStringLine(LCD_LINE_5, (uint8_t*)str);
             sprintf((char*)str, "fifo=0x%X", fifo_sts);
@@ -473,7 +576,9 @@ int main(void)
 #endif
     
     
-				} // lcd_period_flag
+						exti2_flag = 0;
+						
+				} // exti2_flag
     }
 }
 

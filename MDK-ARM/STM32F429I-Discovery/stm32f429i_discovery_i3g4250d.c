@@ -74,8 +74,6 @@
   * @{
   */ 
 __IO uint32_t  I3G4250DTimeout = I3G4250D_FLAG_TIMEOUT;  
-static __IO uint32_t TimingDelay;
-float sens_coeff = L3G_Sensitivity_245dps;
 
 
 /**
@@ -86,7 +84,6 @@ float sens_coeff = L3G_Sensitivity_245dps;
   * @{
   */
 static uint8_t I3G4250D_SendByte(uint8_t byte);
-static void I3G4250D_LowLevel_Init(void);
 static void I3G4250D_EXTI_Config(void);
 
 /**
@@ -97,102 +94,6 @@ static void I3G4250D_EXTI_Config(void);
   * @{
   */
 
-/**
-  * @brief  Set I3G4250D Initialization.
-  * @param  I3G4250D_InitStruct: pointer to a I3G4250D_InitTypeDef structure 
-  *         that contains the configuration setting for the I3G4250D.
-  * @retval None
-  */
-uint8_t I3G4250D_Init(void)
-{  
-    // > 10 ms since poweron
-    Delay(10000);
-
-		// SPI
-    I3G4250D_LowLevel_Init();
-
-    // reset device regs
-    // CTRL1
-    uint8_t ctrl1 = 0;
-    I3G4250D_Read(&ctrl1, I3G4250D_CTRL_REG1_ADDR, 1);
-    if (ctrl1 & I3G4250D_CTRL1_PD)
-    {
-        // if sensor already power on
-        // to POWERDOWN intentionally
-        uint8_t tmp = 0;
-        I3G4250D_Write(&tmp, I3G4250D_CTRL_REG1_ADDR, 1);  
-        while (ctrl1 & I3G4250D_CTRL1_PD)
-        {
-            // poll until PD is 0
-            I3G4250D_Read(&ctrl1, I3G4250D_CTRL_REG1_ADDR, 1);
-        }
-    }
-    // fifo and ints disable
-    I3G4250D_SetFIFOMode_WMLevel(I3G4250D_FIFO_MODE_BYPASS, 0);
-    uint8_t ctrl3 = 0;
-		I3G4250D_Write(&ctrl3, I3G4250D_CTRL_REG3_ADDR, 1);  		
-    I3G4250D_FIFOEnaCmd(DISABLE);
-     
-    // CTRL2: set up HP filter
-    uint8_t cltr2 = 0;
-    I3G4250D_Read(&cltr2, I3G4250D_CTRL_REG2_ADDR, 1);
-    cltr2 &= 0xC0;
-    cltr2 |= (uint8_t) (I3G4250D_HPM_NORMAL_MODE_RES | I3G4250D_HPFCF_ODR105_8HZ);                             
-    I3G4250D_Write(&cltr2, I3G4250D_CTRL_REG2_ADDR, 1);
-
-    // CLTR4: selftest initiated
-    uint8_t ctrl4 = 0;
-    ctrl4 |= (uint8_t) (I3G4250D_BLE_LSB | I3G4250D_FULLSCALE_500 | I3G4250D_CTRL4_ST_NEG);
-    I3G4250D_Write(&ctrl4, I3G4250D_CTRL_REG4_ADDR, 1);
-    
-    // CTRL5: HP (and LP filters)
-    uint8_t ctrl5 = 0;
-    ctrl5 |= (uint8_t) (I3G4250D_CTRL5_HPF_ENA /*| I3G4250D_CTRL3_OUT_SEL1*/);
-    I3G4250D_Write(&ctrl5, I3G4250D_CTRL_REG5_ADDR, 1);
-
-    // CTRL1: mode ACTIVE
-    ctrl1 = 0;
-    ctrl1 |= (uint8_t) (I3G4250D_CTRL1_PD | I3G4250D_OUTPUT_DATARATE_105HZ | \
-        I3G4250D_AXES_ENABLE | I3G4250D_ODR105_BANDWIDTH_25HZ);
-    I3G4250D_Write(&ctrl1, I3G4250D_CTRL_REG1_ADDR, 1);
-		
-    // > 250 ms since poweron
-		Delay(300000);
-
-		// id
-		uint8_t id = 0;
-    I3G4250D_Read(&id, I3G4250D_WHO_AM_I_ADDR, 1);
-		
-		/*
-		// read selftest rates
-		sens_coeff = 0.0;
-		int8_t sens_qty = 0;
-		//for (uint8_t i=0; i<4; i++)
-		{
-			while (!(I3G4250D_GetDataStatus() & I3G4250D_STATUS_ZYX_DA));
-			uint8_t tmp_lo, tmp_hi;
-			I3G4250D_Read(&tmp_lo, I3G4250D_OUT_X_L_ADDR, 1);
-			I3G4250D_Read(&tmp_hi, I3G4250D_OUT_X_H_ADDR, 1);
-			I3G4250D_Read(&tmp_lo, I3G4250D_OUT_Y_L_ADDR, 1);
-			I3G4250D_Read(&tmp_hi, I3G4250D_OUT_Y_H_ADDR, 1);
-			I3G4250D_Read(&tmp_lo, I3G4250D_OUT_Z_L_ADDR, 1);
-			I3G4250D_Read(&tmp_hi, I3G4250D_OUT_Z_H_ADDR, 1);
-			int16_t z_st_raw = (int16_t)(((uint16_t)tmp_hi << 8) | (uint16_t)tmp_lo);
-			sens_coeff = (float)z_st_raw/L3G_245dps_ST_VALUE;
-		}
-		*/
-		
-    // CLTR4: selftest stopped
-		/*
-    ctrl4 = 0;
-    ctrl4 |= (uint8_t) (I3G4250D_BLE_LSB | I3G4250D_FULLSCALE_245);
-    I3G4250D_Write(&ctrl4, I3G4250D_CTRL_REG4_ADDR, 1);
-		*/
-		
-		Delay(100000);
-		
-		return id;
-}
 
 /**
   * @brief  Reboot memory content of I3G4250D
@@ -512,7 +413,7 @@ void I3G4250D_Read(uint8_t* pBuffer, uint8_t ReadAddr, uint16_t NumByteToRead)
   * @param  None
   * @retval None
   */
-static void I3G4250D_LowLevel_Init(void)
+void I3G4250D_LowLevel_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStructure;
   SPI_InitTypeDef  SPI_InitStructure;
@@ -694,31 +595,6 @@ void I3G4250D_INT2_EXTI_Config(void)
   NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x0;
   NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
   NVIC_Init(&NVIC_InitStructure); 
-}
-
-/**
-  * @brief  Inserts a delay time.
-  * @param  nTime: specifies the delay time length
-  * @retval None
-  */
-void Delay(__IO uint32_t nTime)
-{
-  TimingDelay = nTime;
-
-  while(TimingDelay != 0);
-}
-
-/**
-  * @brief  Decrements the TimingDelay variable.
-  * @param  None
-  * @retval None
-  */
-void TimingDelay_Decrement(void)
-{
-  if (TimingDelay != 0x00)
-  { 
-    TimingDelay--;
-  }
 }
 
 
