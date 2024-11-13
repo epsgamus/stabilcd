@@ -1,13 +1,19 @@
-# Lightweight image stabilizer test for STM32F429I-DISCOVERY board
+# Gyrostabilized image lightweight sample
 
-Gyroscope i3g4250d: ODR=105Hz
+## Hardware
 
-Image stabilization axis: Z (rotation) 
+Board: STM32F429I-DISCOVERY
 
-Source BMP image 100x100 px, redrawable area 150x150 pix (up to 30 fps)
+MCU: STM32F429ZIT
 
-## MDK-ARM
+Gyroscope: I3G4250D
 
-## VSCode
+## Restrictions
+
+Image stabilization axis: Z (roll) 
+
+Source BMP image: 100x100, grayscale
+
+
 
 
