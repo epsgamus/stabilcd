@@ -64,8 +64,7 @@
 
 #if STABILCD_FS_DEG == 245
 	#define L3G_SELFTEST_VALUE 					L3G_245dps_ST_VALUE
-//	#define L3G_SENS_INITIAL	 					L3G_Sensitivity_245dps
-	#define L3G_SENS_INITIAL	 					 (float)110.5f 
+	#define L3G_SENS_INITIAL	 					L3G_Sensitivity_245dps
 	#define I3G4250D_FULLSCALE_RANGE 		I3G4250D_FULLSCALE_245
 #elif STABILCD_FS_DEG == 500
 	#define L3G_SELFTEST_VALUE 					L3G_500dps_ST_VALUE
