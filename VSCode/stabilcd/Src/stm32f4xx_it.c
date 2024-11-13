@@ -51,10 +51,12 @@ volatile uint32_t systick_cnt = 0;
 uint32_t time_prev_usec = 0;
 
 extern uint8_t lcd_period_flag;
+extern uint8_t exti2_flag;
 extern uint8_t calib_flag;
 extern float phi_integrated;
 extern float omega_z;
 extern uint32_t delta_time_usec;
+extern float sens_coeff;
 
 extern uint8_t main_sts; 
 extern uint8_t fifo_sts; 
@@ -179,7 +181,7 @@ void SysTick_Handler(void)
     {
         // tmply
         lcd_period_flag = 1;
-	}
+		}
 			
 }
 
@@ -205,8 +207,9 @@ void EXTI2_IRQHandler(void)
         // tgl LED3
         STM_EVAL_LEDToggle(LED3);
 #endif        
-        EXTI_ClearITPendingBit(I3G4250D_SPI_INT2_EXTI_LINE);   
+        EXTI_ClearITPendingBit(I3G4250D_SPI_INT2_EXTI_LINE); 
     }
+		exti2_flag = 1;
     
     // used after calib completion
     delta_time_usec = systick_cnt - time_prev_usec;
@@ -232,7 +235,7 @@ void EXTI2_IRQHandler(void)
         I3G4250D_Read(tmpbuffer + 6*i + 2, I3G4250D_OUT_Y_L_ADDR, 2);
         // Z
         I3G4250D_Read(tmpbuffer + 6*i + 4, I3G4250D_OUT_Z_L_ADDR, 2);
-        // Y
+        // X
         I3G4250D_Read(tmpbuffer + 6*i, I3G4250D_OUT_X_L_ADDR, 2);
     }
     
@@ -254,7 +257,7 @@ void EXTI2_IRQHandler(void)
     int32_t omega_raw = (int16_t)(sum/I3G4250D_FIFO_WM_LEVEL); 
 
     // float rate
-    omega_z = (float)omega_raw/L3G_Sensitivity_245dps - omega_z_bias;
+    omega_z = (float)omega_raw/sens_coeff - omega_z_bias;
     
     if (calib_cnt == I3G4250D_CALIB_SAMPLES) 
     {
@@ -263,7 +266,7 @@ void EXTI2_IRQHandler(void)
         // clr it
         calib_flag = 0; 
         // integrate
-        phi_integrated += (omega_z/1000.0F)*(float)(delta_time_usec/1000);  
+        phi_integrated += (omega_z*0.001F)*((float)delta_time_usec*0.001F);  
     }
     if (calib_flag)
     {
