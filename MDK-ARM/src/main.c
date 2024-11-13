@@ -357,22 +357,22 @@ static uint32_t ReadBMP(uint32_t BmpAddress, uint8_t *bmp_image, uint32_t *width
   */
 static void DrawActiveZone(uint8_t *img, uint16_t horz_pos, uint16_t vert_pos, uint8_t back_color)
 {
-    uint32_t Address;
- 	uint32_t i, j, src_pixel;
+  uint32_t Address;
+ 	uint32_t src_pixel;
 	uint32_t RGB565_pixel;
 	uint32_t R_comp, B_comp, G_comp;
 
-    // FOREGROUND
-    LTDC_LayerSize(LTDC_Layer2, LCD_SIZE_PIXEL_WIDTH, LCD_SIZE_PIXEL_HEIGHT);
-    LTDC_ReloadConfig(LTDC_VBReload); 
+  // FOREGROUND
+  LTDC_LayerSize(LTDC_Layer2, LCD_SIZE_PIXEL_WIDTH, LCD_SIZE_PIXEL_HEIGHT);
+  LTDC_ReloadConfig(LTDC_VBReload); 
  
 	// assume 24 BPP
 	LTDC_LayerPixelFormat(LTDC_Layer1, LTDC_Pixelformat_RGB565);
 	LTDC_ReloadConfig(LTDC_VBReload);
   
-    for (i=0; i<LCD_SIZE_PIXEL_HEIGHT; i++)
+  for (int32_t i=0; i<LCD_SIZE_PIXEL_HEIGHT; i++)
 	{
-		for (j=0; j<LCD_SIZE_PIXEL_WIDTH; j++)
+		for (int32_t j=0; j<LCD_SIZE_PIXEL_WIDTH; j++)
 		{
 			Address = LCD_FRAME_BUFFER + BUFFER_OFFSET + i*LCD_SIZE_PIXEL_WIDTH*2 + j*2;
             

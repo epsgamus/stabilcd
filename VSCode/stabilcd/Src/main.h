@@ -49,8 +49,42 @@
 // uncmt to echo msgs to lcd
 //#define STABILCD_LCD_VERBOSE
 
-// gyro period, ODR=95HZ
-#define GYRO_ODR95_PERIOD_USEC		10526ul
+// uncmt to get initial sensty val using selfest
+//#define STABILCD_USE_SELFTEST
+
+// fullscale selected (245/500/2000)
+#define STABILCD_FS_DEG			245
+
+
+#ifdef STABILCD_USE_SELFTEST
+	#define STABILCD_ST_TYPE I3G4250D_CTRL4_ST_NEG
+#else
+	#define STABILCD_ST_TYPE I3G4250D_CTRL4_ST_DIS
+#endif
+
+#if STABILCD_FS_DEG == 245
+	#define L3G_SELFTEST_VALUE 					L3G_245dps_ST_VALUE
+	#define L3G_SENS_INITIAL	 					L3G_Sensitivity_245dps
+	#define I3G4250D_FULLSCALE_RANGE 		I3G4250D_FULLSCALE_245
+#elif STABILCD_FS_DEG == 500
+	#define L3G_SELFTEST_VALUE 					L3G_500dps_ST_VALUE
+	#define L3G_SENS_INITIAL	 					L3G_Sensitivity_500dps
+	#define I3G4250D_FULLSCALE_RANGE 		I3G4250D_FULLSCALE_500
+#elif STABILCD_FS_DEG == 2000
+	#define L3G_SELFTEST_VALUE 					L3G_2000dps_ST_VALUE
+	#define L3G_SENS_INITIAL	 					L3G_Sensitivity_2000dps
+	#define I3G4250D_FULLSCALE_RANGE 		I3G4250D_FULLSCALE_2000
+#else
+	#error STABILCD_FS_DEG must be 245, 500 or 2000
+#endif
+
+// FIFO depth used, samples of ODR
+#define I3G4250D_FIFO_WM_LEVEL    	3
+
+// calib samples
+#define I3G4250D_CALIB_SAMPLES      300
+
+
 
 /*
 // 278*327@6Mhz 
@@ -110,9 +144,6 @@ typedef struct
 
 
 /* Exported functions ------------------------------------------------------- */
-void Delay(__IO uint32_t nTime);
-void TimingDelay_Decrement(void);
-
 static inline vec_2_d VectorSimpleRotation(vec_2_d src, float cos_phi, float sin_phi)
 {
     float x = (src.i1 - ACTIVE_HEIGHT/2);
@@ -122,6 +153,10 @@ static inline vec_2_d VectorSimpleRotation(vec_2_d src, float cos_phi, float sin
     dst.i2 = (sin_phi*x + cos_phi*y) + ACTIVE_WIDTH/2;
     return dst;
 }
+
+void Delay(__IO uint32_t nTime);
+void TimingDelay_Decrement(void);
+
 
 #endif /* __MAIN_H */
 
