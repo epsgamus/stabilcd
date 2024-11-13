@@ -47,7 +47,7 @@
 //#define STABILCD_LED_BLINKS
 
 // uncmt to echo msgs to lcd
-#define STABILCD_LCD_VERBOSE
+//#define STABILCD_LCD_VERBOSE
 
 // uncmt to get initial sensty val using selfest
 //#define STABILCD_USE_SELFTEST
@@ -64,7 +64,8 @@
 
 #if STABILCD_FS_DEG == 245
 	#define L3G_SELFTEST_VALUE 					L3G_245dps_ST_VALUE
-	#define L3G_SENS_INITIAL	 					L3G_Sensitivity_245dps
+//	#define L3G_SENS_INITIAL	 					L3G_Sensitivity_245dps
+	#define L3G_SENS_INITIAL	 					 (float)110.5f 
 	#define I3G4250D_FULLSCALE_RANGE 		I3G4250D_FULLSCALE_245
 #elif STABILCD_FS_DEG == 500
 	#define L3G_SELFTEST_VALUE 					L3G_500dps_ST_VALUE
